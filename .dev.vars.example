@@ -1,0 +1,4 @@
+# Copy to .dev.vars for Vite + Workers local dev (server functions read this).
+
+DATABASE_URL=
+CLERK_SECRET_KEY=

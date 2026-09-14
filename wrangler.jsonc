@@ -1,0 +1,24 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "vars": {
+    "CLERK_PUBLISHABLE_KEY": "pk_test_bmF0aXZlLXNocmltcC05My5jbGVyay5hY2NvdW50cy5kZXYk",
+    "VITE_CLERK_PUBLISHABLE_KEY": "pk_test_bmF0aXZlLXNocmltcC05My5jbGVyay5hY2NvdW50cy5kZXYk"
+  },
+  "name": "garage",
+  "compatibility_date": "2025-09-02",
+  "compatibility_flags": [
+    "nodejs_compat",
+    "nodejs_compat_populate_process_env"
+  ],
+  "main": "@tanstack/react-start/server-entry",
+  "routes": [
+    {
+      "pattern": "garage.bartonhome.dev",
+      "zone_name": "bartonhome.dev",
+      "custom_domain": true
+    }
+  ],
+  "observability": {
+    "enabled": true
+  }
+}
