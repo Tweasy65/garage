@@ -10,11 +10,12 @@ Vehicle inventory and maintenance tracking for [bartonhome.dev](https://bartonho
 
 ## Local setup
 
-1. Copy `.env.example` to `.env.local` and fill in Clerk + Neon values.
-2. Copy `.dev.vars.example` to `.dev.vars` with the same secrets for Worker server functions.
-3. Install dependencies: `pnpm install`
-4. Apply migrations: `pnpm db:migrate`
-5. Start dev server: `pnpm dev`
+1. Copy `.env.example` to `.env.local` and `.dev.vars.example` to `.dev.vars`.
+2. Set `DATABASE_URL` from the Neon **garage** project (`morning-tree-19979220`) — use the **pooled** connection string.
+3. Set `VITE_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` (same Clerk app as other Barton Home apps).
+4. Install dependencies: `pnpm install`
+5. Apply migrations: `pnpm db:migrate` (already applied if using the shared Neon garage project)
+6. Start dev server: `pnpm dev`
 
 ## Deploy
 
