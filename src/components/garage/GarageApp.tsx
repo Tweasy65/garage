@@ -7,7 +7,7 @@ import {
   Trash2,
   Wrench,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import MaintenanceForm from '@/components/garage/MaintenanceForm'
 import VehicleForm from '@/components/garage/VehicleForm'
@@ -45,6 +45,14 @@ export default function GarageApp({ initialVehicles }: GarageAppProps) {
   const [activeTab, setActiveTab] = useState<'overview' | 'maintenance'>(
     'overview',
   )
+
+  useEffect(() => {
+    if (selectedId && !selectedVehicle) {
+      void loadVehicle(selectedId)
+    }
+    // Load detail when the selected vehicle id changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId])
 
   async function refreshList(selectId?: string | null) {
     const { vehicles: next } = await listVehicles()

@@ -12,7 +12,12 @@ export default function Header() {
           </div>
           <div>
             <p className="text-lg font-semibold tracking-tight">Garage</p>
-            <p className="text-xs text-garage-muted">bartonhome.dev</p>
+            <a
+              href="https://bartonhome.dev"
+              className="text-xs text-garage-muted transition hover:text-white"
+            >
+              bartonhome.dev
+            </a>
           </div>
         </div>
         <HeaderUser />
