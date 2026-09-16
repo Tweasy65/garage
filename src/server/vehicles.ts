@@ -4,6 +4,8 @@ import { and, count, desc, eq } from 'drizzle-orm'
 
 import { db } from '@/db'
 import { maintenanceRecords, vehicles } from '@/db/schema'
+import { computeMaintenanceAlerts } from '@/lib/maintenanceAlerts'
+import type { MaintenanceAlert } from '@/lib/maintenanceAlerts'
 import type {
   MaintenanceRecord,
   VehicleDetail,
@@ -122,7 +124,7 @@ function normalizeVehicleInput(data: VehicleInput) {
 export const listVehicles = createServerFn({ method: 'GET' }).handler(async () => {
   const { userId } = await auth()
   if (!userId) {
-    return { vehicles: [] as VehicleSummary[] }
+    return { vehicles: [] as VehicleSummary[], alerts: [] as MaintenanceAlert[] }
   }
 
   const rows = await db
@@ -136,10 +138,25 @@ export const listVehicles = createServerFn({ method: 'GET' }).handler(async () =
     .groupBy(vehicles.id)
     .orderBy(desc(vehicles.isFavorite), desc(vehicles.updatedAt))
 
+  const summaries = rows.map((row) =>
+    mapVehicleSummary(row.vehicle, Number(row.maintenanceCount)),
+  )
+
+  const maintenanceRows = await db
+    .select()
+    .from(maintenanceRecords)
+    .where(eq(maintenanceRecords.userId, userId))
+
+  const recordsByVehicle: Record<string, MaintenanceRecord[]> = {}
+  for (const row of maintenanceRows) {
+    const list = recordsByVehicle[row.vehicleId] ?? []
+    list.push(mapMaintenance(row))
+    recordsByVehicle[row.vehicleId] = list
+  }
+
   return {
-    vehicles: rows.map((row) =>
-      mapVehicleSummary(row.vehicle, Number(row.maintenanceCount)),
-    ),
+    vehicles: summaries,
+    alerts: computeMaintenanceAlerts(summaries, recordsByVehicle),
   }
 })
 

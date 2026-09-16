@@ -1,5 +1,6 @@
 import { useState } from 'react'
 
+import { MAINTENANCE_TYPES } from '@/data/vehicleCatalog'
 import type { MaintenanceInput } from '@/lib/vehicleTypes'
 
 type MaintenanceFormProps = {
@@ -12,12 +13,15 @@ export default function MaintenanceForm({
   onSubmit,
 }: MaintenanceFormProps) {
   const [values, setValues] = useState({
-    type: '',
+    type: 'Oil change',
+    customType: '',
     date: new Date().toISOString().slice(0, 10),
     description: '',
     cost: '',
     mileage: '',
     serviceProvider: '',
+    nextDueDate: '',
+    nextDueMileage: '',
   })
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -26,25 +30,32 @@ export default function MaintenanceForm({
     e.preventDefault()
     setPending(true)
     setError(null)
+    const type =
+      values.type === 'Other' ? values.customType.trim() : values.type
     try {
       await onSubmit({
         vehicleId,
-        type: values.type,
+        type,
         date: values.date,
         description: values.description || null,
-        costCents: values.cost
-          ? Math.round(Number(values.cost) * 100)
-          : null,
+        costCents: values.cost ? Math.round(Number(values.cost) * 100) : null,
         mileage: values.mileage ? Number(values.mileage) : null,
         serviceProvider: values.serviceProvider || null,
+        nextDueDate: values.nextDueDate || null,
+        nextDueMileage: values.nextDueMileage
+          ? Number(values.nextDueMileage)
+          : null,
       })
       setValues({
-        type: '',
+        type: 'Oil change',
+        customType: '',
         date: new Date().toISOString().slice(0, 10),
         description: '',
         cost: '',
         mileage: '',
         serviceProvider: '',
+        nextDueDate: '',
+        nextDueMileage: '',
       })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
@@ -54,21 +65,39 @@ export default function MaintenanceForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="garage-panel space-y-4 p-4">
-      <h3 className="font-medium">Add maintenance</h3>
+    <form onSubmit={handleSubmit} className="space-y-4 border border-garage-border p-4">
+      <p className="label-caps">Log service</p>
       <div className="grid gap-4 md:grid-cols-2">
         <label className="block space-y-1.5">
-          <span className="text-sm text-garage-muted">Type *</span>
-          <input
+          <span className="label-caps">Type *</span>
+          <select
             className="field"
             value={values.type}
             onChange={(e) => setValues({ ...values, type: e.target.value })}
-            placeholder="Oil change"
             required
-          />
+          >
+            {MAINTENANCE_TYPES.map((type) => (
+              <option key={type} value={type}>
+                {type}
+              </option>
+            ))}
+          </select>
         </label>
+        {values.type === 'Other' ? (
+          <label className="block space-y-1.5">
+            <span className="label-caps">Custom type *</span>
+            <input
+              className="field"
+              value={values.customType}
+              onChange={(e) =>
+                setValues({ ...values, customType: e.target.value })
+              }
+              required
+            />
+          </label>
+        ) : null}
         <label className="block space-y-1.5">
-          <span className="text-sm text-garage-muted">Date *</span>
+          <span className="label-caps">Date *</span>
           <input
             className="field"
             type="date"
@@ -78,7 +107,7 @@ export default function MaintenanceForm({
           />
         </label>
         <label className="block space-y-1.5">
-          <span className="text-sm text-garage-muted">Cost ($)</span>
+          <span className="label-caps">Cost ($)</span>
           <input
             className="field"
             type="number"
@@ -89,7 +118,7 @@ export default function MaintenanceForm({
           />
         </label>
         <label className="block space-y-1.5">
-          <span className="text-sm text-garage-muted">Mileage</span>
+          <span className="label-caps">Mileage</span>
           <input
             className="field"
             type="number"
@@ -98,9 +127,32 @@ export default function MaintenanceForm({
             onChange={(e) => setValues({ ...values, mileage: e.target.value })}
           />
         </label>
+        <label className="block space-y-1.5">
+          <span className="label-caps">Next due date</span>
+          <input
+            className="field"
+            type="date"
+            value={values.nextDueDate}
+            onChange={(e) =>
+              setValues({ ...values, nextDueDate: e.target.value })
+            }
+          />
+        </label>
+        <label className="block space-y-1.5">
+          <span className="label-caps">Next due mileage</span>
+          <input
+            className="field"
+            type="number"
+            min={0}
+            value={values.nextDueMileage}
+            onChange={(e) =>
+              setValues({ ...values, nextDueMileage: e.target.value })
+            }
+          />
+        </label>
       </div>
       <label className="block space-y-1.5">
-        <span className="text-sm text-garage-muted">Service provider</span>
+        <span className="label-caps">Service provider</span>
         <input
           className="field"
           value={values.serviceProvider}
@@ -110,7 +162,7 @@ export default function MaintenanceForm({
         />
       </label>
       <label className="block space-y-1.5">
-        <span className="text-sm text-garage-muted">Notes</span>
+        <span className="label-caps">Notes</span>
         <textarea
           className="field min-h-20"
           value={values.description}
@@ -119,12 +171,8 @@ export default function MaintenanceForm({
           }
         />
       </label>
-      {error ? <p className="text-sm text-red-400">{error}</p> : null}
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded-full bg-white/10 px-4 py-2 text-sm font-medium hover:bg-white/15 disabled:opacity-60"
-      >
+      {error ? <p className="text-sm text-red-300">{error}</p> : null}
+      <button type="submit" disabled={pending} className="btn-primary">
         {pending ? 'Saving…' : 'Add record'}
       </button>
     </form>

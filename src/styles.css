@@ -1,28 +1,42 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --color-garage-bg: #0a0a0b;
-  --color-garage-panel: #131316;
-  --color-garage-panel-2: #1c1c21;
-  --color-garage-border: #2a2a31;
-  --color-garage-muted: #9ca3af;
-  --color-garage-accent: #60a5fa;
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --color-garage-bg: #111111;
+  --color-garage-panel: #1a1a1a;
+  --color-garage-panel-2: #242424;
+  --color-garage-border: #3a3a3a;
+  --color-garage-muted: #8a8a8a;
+  --color-garage-accent: #d4d4d4;
+  --color-garage-text: #f2f2f2;
+  --radius-panel: 0.25rem;
 }
 
 @layer base {
   body {
-    @apply m-0 min-h-dvh bg-garage-bg font-sans text-white antialiased;
+    @apply m-0 min-h-dvh bg-garage-bg font-sans text-garage-text antialiased;
   }
 }
 
 @layer utilities {
   .garage-panel {
-    @apply rounded-2xl border border-garage-border bg-garage-panel;
+    @apply rounded-sm border border-garage-border bg-garage-panel;
   }
 
   .field {
-    @apply w-full rounded-xl border border-garage-border bg-garage-panel-2 px-3 py-2 text-sm text-white outline-none transition focus:border-garage-accent;
+    @apply w-full rounded-sm border border-garage-border bg-garage-panel-2 px-3 py-2 text-sm text-garage-text outline-none transition focus:border-garage-accent;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-sm border border-garage-border bg-garage-panel-2 px-4 py-2 text-sm font-medium text-garage-text transition hover:bg-white/10 disabled:opacity-60;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-sm bg-garage-text px-4 py-2 text-sm font-semibold text-garage-bg transition hover:bg-white disabled:opacity-60;
+  }
+
+  .label-caps {
+    @apply text-[11px] font-semibold uppercase tracking-[0.14em] text-garage-muted;
   }
 }

@@ -52,6 +52,13 @@ export type VehicleSummary = {
   maintenanceCount: number
 }
 
+export type StockImage = {
+  url: string
+  thumbUrl: string
+  title: string
+  source: string
+}
+
 export type VehicleDetail = VehicleSummary & {
   vin: string | null
   licensePlate: string | null

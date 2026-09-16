@@ -9,6 +9,6 @@ export const Route = createFileRoute('/')({
 })
 
 function HomePage() {
-  const { vehicles } = Route.useLoaderData()
-  return <GarageApp initialVehicles={vehicles} />
+  const { vehicles, alerts } = Route.useLoaderData()
+  return <GarageApp initialVehicles={vehicles} initialAlerts={alerts} />
 }
