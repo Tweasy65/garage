@@ -14,12 +14,13 @@ async function requireUserId(): Promise<string> {
 
 async function assertVehicleOwner(vehicleId: string, userId: string) {
   const [vehicle] = await db
-    .select({ id: vehicles.id })
+    .select({ id: vehicles.id, mileage: vehicles.mileage })
     .from(vehicles)
     .where(and(eq(vehicles.id, vehicleId), eq(vehicles.userId, userId)))
     .limit(1)
 
   if (!vehicle) throw new Error('Vehicle not found')
+  return vehicle
 }
 
 function normalizeMaintenanceInput(data: MaintenanceInput) {
@@ -46,16 +47,24 @@ export const addMaintenanceRecord = createServerFn({ method: 'POST' })
   .handler(async ({ data }) => {
     const userId = await requireUserId()
     const values = normalizeMaintenanceInput(data)
-    await assertVehicleOwner(values.vehicleId, userId)
+    const vehicle = await assertVehicleOwner(values.vehicleId, userId)
 
     const [row] = await db
       .insert(maintenanceRecords)
       .values({ ...values, userId })
       .returning()
 
+    const nextMileage =
+      values.mileage != null && values.mileage > vehicle.mileage
+        ? values.mileage
+        : undefined
+
     await db
       .update(vehicles)
-      .set({ updatedAt: new Date() })
+      .set({
+        updatedAt: new Date(),
+        ...(nextMileage != null ? { mileage: nextMileage } : {}),
+      })
       .where(eq(vehicles.id, values.vehicleId))
 
     return {

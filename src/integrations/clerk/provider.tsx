@@ -8,13 +8,11 @@ export default function AppClerkProvider({
   children: React.ReactNode
 }) {
   const publishableKey = getClerkPublishableKey()
-  if (!publishableKey) {
-    throw new Error(
-      'Missing Clerk publishable key. Set VITE_CLERK_PUBLISHABLE_KEY in .env.local.',
-    )
-  }
   return (
-    <ClerkProvider publishableKey={publishableKey} afterSignOutUrl="/">
+    <ClerkProvider
+      {...(publishableKey ? { publishableKey } : {})}
+      afterSignOutUrl="/"
+    >
       {children}
     </ClerkProvider>
   )

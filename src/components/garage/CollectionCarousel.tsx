@@ -1,6 +1,14 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { useEffect, useRef } from 'react'
+import { ChevronLeft, ChevronRight, Star } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 
+import VehicleModelCanvas from '@/components/garage/VehicleModelCanvas'
+import VehicleThumb from '@/components/garage/VehicleThumb'
+import {
+  FEATURED_MODEL,
+  modelForVehicle,
+  paintColorFromName,
+} from '@/data/vehicleModels'
+import { formatMiles } from '@/lib/format'
 import type { VehicleSummary } from '@/lib/vehicleTypes'
 
 type CollectionCarouselProps = {
@@ -15,6 +23,16 @@ export default function CollectionCarousel({
   onSelect,
 }: CollectionCarouselProps) {
   const scroller = useRef<HTMLDivElement>(null)
+  const selected = vehicles.find((vehicle) => vehicle.id === selectedId) ?? vehicles[0]
+  const matched = selected ? modelForVehicle(selected) : null
+  const spec = matched ?? FEATURED_MODEL
+  const [hoodOpen, setHoodOpen] = useState(false)
+  const [trunkOpen, setTrunkOpen] = useState(false)
+
+  useEffect(() => {
+    setHoodOpen(false)
+    setTrunkOpen(false)
+  }, [selected?.id])
 
   useEffect(() => {
     if (!selectedId || !scroller.current) return
@@ -30,8 +48,6 @@ export default function CollectionCarousel({
     node.scrollBy({ left: direction * (node.clientWidth * 0.72), behavior: 'smooth' })
   }
 
-  if (vehicles.length === 0) return null
-
   return (
     <section className="garage-panel overflow-hidden">
       <div className="flex items-center justify-between border-b border-garage-border px-4 py-3">
@@ -40,55 +56,88 @@ export default function CollectionCarousel({
           <h2 className="mt-1 text-lg font-semibold">Showcase</h2>
         </div>
         <div className="flex gap-2">
-          <button type="button" className="btn" onClick={() => scrollByCard(-1)} aria-label="Previous">
-            <ChevronLeft className="size-4" />
+          <button
+            type="button"
+            className={`btn px-3 text-xs ${hoodOpen ? 'border-garage-accent bg-white/10' : ''}`}
+            onClick={() => setHoodOpen((open) => !open)}
+          >
+            Hood
           </button>
-          <button type="button" className="btn" onClick={() => scrollByCard(1)} aria-label="Next">
-            <ChevronRight className="size-4" />
+          <button
+            type="button"
+            className={`btn px-3 text-xs ${trunkOpen ? 'border-garage-accent bg-white/10' : ''}`}
+            onClick={() => setTrunkOpen((open) => !open)}
+          >
+            Trunk
           </button>
+          {vehicles.length > 1 ? (
+            <>
+              <button type="button" className="btn px-2" onClick={() => scrollByCard(-1)} aria-label="Previous">
+                <ChevronLeft className="size-4" />
+              </button>
+              <button type="button" className="btn px-2" onClick={() => scrollByCard(1)} aria-label="Next">
+                <ChevronRight className="size-4" />
+              </button>
+            </>
+          ) : null}
         </div>
       </div>
-      <div
-        ref={scroller}
-        className="flex snap-x snap-mandatory gap-3 overflow-x-auto p-4 scroll-smooth"
-      >
-        {vehicles.map((vehicle) => (
-          <button
-            key={vehicle.id}
-            type="button"
-            data-vehicle-id={vehicle.id}
-            onClick={() => onSelect(vehicle.id)}
-            className={`w-[min(100%,420px)] shrink-0 snap-center overflow-hidden rounded-sm border text-left transition ${
-              selectedId === vehicle.id
-                ? 'border-garage-accent'
-                : 'border-garage-border hover:border-garage-muted'
-            }`}
-          >
-            <div className="h-48 bg-garage-panel-2">
-              {vehicle.imageUrl ? (
-                <img
-                  src={vehicle.imageUrl}
-                  alt=""
-                  className="h-full w-full object-cover grayscale"
-                />
-              ) : (
-                <div className="flex h-full items-center justify-center text-sm text-garage-muted">
-                  No photo
-                </div>
-              )}
-            </div>
-            <div className="border-t border-garage-border bg-garage-panel px-4 py-3">
-              <p className="truncate font-medium">
-                {vehicle.year} {vehicle.make} {vehicle.model}
-              </p>
-              <p className="mt-1 text-sm text-garage-muted">
-                {vehicle.mileage.toLocaleString()} mi
-                {vehicle.trim ? ` · ${vehicle.trim}` : ''}
-              </p>
-            </div>
-          </button>
-        ))}
+
+      <VehicleModelCanvas
+        spec={spec}
+        color={matched ? paintColorFromName(selected?.color) : paintColorFromName('red')}
+        pose={{ hoodOpen, trunkOpen }}
+        className="h-72 w-full md:h-80"
+      />
+
+      <div className="border-t border-garage-border px-4 py-3">
+        <div className="flex items-center gap-2">
+          <p className="truncate font-medium">
+            {spec.year} {spec.make} {spec.model}
+            {spec.bodyStyle ? ` ${spec.bodyStyle}` : ''}
+          </p>
+          <span className="badge">3D</span>
+          {selected?.isFavorite && matched ? (
+            <Star className="size-3 shrink-0 fill-garage-accent text-garage-accent" />
+          ) : null}
+        </div>
+        <p className="mt-1 text-sm text-garage-muted">
+          {matched && selected
+            ? `${formatMiles(selected.mileage)}${selected.trim ? ` · ${selected.trim}` : ''}${selected.isProject ? ' · Project' : ''} · Drag to orbit`
+            : 'Featured model · Drag to orbit · Add a Ford Mustang to tint paint from your garage'}
+        </p>
       </div>
+
+      {vehicles.length > 1 ? (
+        <div
+          ref={scroller}
+          className="hide-scrollbar flex snap-x snap-mandatory gap-2 overflow-x-auto border-t border-garage-border p-3"
+        >
+          {vehicles.map((vehicle) => (
+            <button
+              key={vehicle.id}
+              type="button"
+              data-vehicle-id={vehicle.id}
+              onClick={() => onSelect(vehicle.id)}
+              className={`w-28 shrink-0 snap-start overflow-hidden rounded-sm border text-left ${
+                selectedId === vehicle.id
+                  ? 'border-garage-accent'
+                  : 'border-garage-border hover:border-garage-muted'
+              }`}
+            >
+              <VehicleThumb
+                src={vehicle.imageUrl}
+                alt=""
+                className="h-16"
+                iconClassName="size-5"
+              />
+              <p className="truncate px-2 py-1.5 text-[11px] text-garage-muted">
+                {vehicle.year} {vehicle.make}
+              </p>
+            </button>
+          ))}
+        </div>
+      ) : null}
     </section>
   )
 }

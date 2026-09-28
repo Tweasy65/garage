@@ -5,24 +5,16 @@ import type { MaintenanceInput } from '@/lib/vehicleTypes'
 
 type MaintenanceFormProps = {
   vehicleId: string
+  defaultMileage?: number
   onSubmit: (values: MaintenanceInput) => Promise<void>
 }
 
 export default function MaintenanceForm({
   vehicleId,
+  defaultMileage,
   onSubmit,
 }: MaintenanceFormProps) {
-  const [values, setValues] = useState({
-    type: 'Oil change',
-    customType: '',
-    date: new Date().toISOString().slice(0, 10),
-    description: '',
-    cost: '',
-    mileage: '',
-    serviceProvider: '',
-    nextDueDate: '',
-    nextDueMileage: '',
-  })
+  const [values, setValues] = useState(() => emptyValues(defaultMileage))
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -46,17 +38,7 @@ export default function MaintenanceForm({
           ? Number(values.nextDueMileage)
           : null,
       })
-      setValues({
-        type: 'Oil change',
-        customType: '',
-        date: new Date().toISOString().slice(0, 10),
-        description: '',
-        cost: '',
-        mileage: '',
-        serviceProvider: '',
-        nextDueDate: '',
-        nextDueMileage: '',
-      })
+      setValues(emptyValues(values.mileage ? Number(values.mileage) : defaultMileage))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
     } finally {
@@ -65,8 +47,13 @@ export default function MaintenanceForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 border border-garage-border p-4">
-      <p className="label-caps">Log service</p>
+    <form onSubmit={handleSubmit} className="space-y-4 rounded-sm border border-garage-border bg-garage-panel-2/40 p-4">
+      <div>
+        <p className="label-caps">Log service</p>
+        <p className="mt-1 text-sm text-garage-muted">
+          Use the type dropdown so Garage can track the next interval.
+        </p>
+      </div>
       <div className="grid gap-4 md:grid-cols-2">
         <label className="block space-y-1.5">
           <span className="label-caps">Type *</span>
@@ -107,6 +94,17 @@ export default function MaintenanceForm({
           />
         </label>
         <label className="block space-y-1.5">
+          <span className="label-caps">Odometer (mi)</span>
+          <input
+            className="field"
+            type="number"
+            min={0}
+            value={values.mileage}
+            onChange={(e) => setValues({ ...values, mileage: e.target.value })}
+            placeholder={defaultMileage ? String(defaultMileage) : undefined}
+          />
+        </label>
+        <label className="block space-y-1.5">
           <span className="label-caps">Cost ($)</span>
           <input
             className="field"
@@ -118,13 +116,13 @@ export default function MaintenanceForm({
           />
         </label>
         <label className="block space-y-1.5">
-          <span className="label-caps">Mileage</span>
+          <span className="label-caps">Shop / provider</span>
           <input
             className="field"
-            type="number"
-            min={0}
-            value={values.mileage}
-            onChange={(e) => setValues({ ...values, mileage: e.target.value })}
+            value={values.serviceProvider}
+            onChange={(e) =>
+              setValues({ ...values, serviceProvider: e.target.value })
+            }
           />
         </label>
         <label className="block space-y-1.5">
@@ -152,16 +150,6 @@ export default function MaintenanceForm({
         </label>
       </div>
       <label className="block space-y-1.5">
-        <span className="label-caps">Service provider</span>
-        <input
-          className="field"
-          value={values.serviceProvider}
-          onChange={(e) =>
-            setValues({ ...values, serviceProvider: e.target.value })
-          }
-        />
-      </label>
-      <label className="block space-y-1.5">
         <span className="label-caps">Notes</span>
         <textarea
           className="field min-h-20"
@@ -177,4 +165,18 @@ export default function MaintenanceForm({
       </button>
     </form>
   )
+}
+
+function emptyValues(mileage?: number) {
+  return {
+    type: 'Oil change',
+    customType: '',
+    date: new Date().toISOString().slice(0, 10),
+    description: '',
+    cost: '',
+    mileage: mileage != null ? String(mileage) : '',
+    serviceProvider: '',
+    nextDueDate: '',
+    nextDueMileage: '',
+  }
 }

@@ -4,7 +4,7 @@ import HeaderUser from '@/integrations/clerk/header-user'
 
 export default function Header() {
   return (
-    <header className="border-b border-garage-border bg-garage-panel">
+    <header className="sticky top-0 z-20 border-b border-garage-border bg-garage-panel/95 backdrop-blur">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 md:px-6">
         <div className="flex items-center gap-3">
           <div className="flex size-9 items-center justify-center border border-garage-border bg-garage-panel-2">

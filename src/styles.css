@@ -14,8 +14,21 @@
 }
 
 @layer base {
+  html {
+    color-scheme: dark;
+  }
+
   body {
     @apply m-0 min-h-dvh bg-garage-bg font-sans text-garage-text antialiased;
+  }
+
+  button:not(:disabled) {
+    @apply cursor-pointer;
+  }
+
+  ::selection {
+    background: #3a3a3a;
+    color: #f2f2f2;
   }
 }
 
@@ -26,17 +39,31 @@
 
   .field {
     @apply w-full rounded-sm border border-garage-border bg-garage-panel-2 px-3 py-2 text-sm text-garage-text outline-none transition focus:border-garage-accent;
+    color-scheme: dark;
   }
 
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-sm border border-garage-border bg-garage-panel-2 px-4 py-2 text-sm font-medium text-garage-text transition hover:bg-white/10 disabled:opacity-60;
+    @apply inline-flex items-center justify-center gap-2 rounded-sm border border-garage-border bg-garage-panel-2 px-4 py-2 text-sm font-medium text-garage-text transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-sm bg-garage-text px-4 py-2 text-sm font-semibold text-garage-bg transition hover:bg-white disabled:opacity-60;
+    @apply inline-flex items-center justify-center gap-2 rounded-sm bg-garage-text px-4 py-2 text-sm font-semibold text-garage-bg transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .label-caps {
     @apply text-[11px] font-semibold uppercase tracking-[0.14em] text-garage-muted;
+  }
+
+  .badge {
+    @apply inline-flex items-center rounded-sm border border-garage-border px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-garage-muted;
+  }
+
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
   }
 }

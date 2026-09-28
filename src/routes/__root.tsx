@@ -32,11 +32,9 @@ export const Route = createRootRoute({
 
 function RootComponent() {
   return (
-    <ClerkProvider>
-      <RootDocument>
-        <Outlet />
-      </RootDocument>
-    </ClerkProvider>
+    <RootDocument>
+      <Outlet />
+    </RootDocument>
   )
 }
 
@@ -47,8 +45,10 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        <Header />
-        {children}
+        <ClerkProvider>
+          <Header />
+          {children}
+        </ClerkProvider>
         <Scripts />
       </body>
     </html>

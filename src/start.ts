@@ -6,9 +6,13 @@ import { workerEnv } from '@/lib/workerEnv'
 
 export const startInstance = createStart(() => ({
   requestMiddleware: [
-    clerkMiddleware(() => ({
-      secretKey: workerEnv('CLERK_SECRET_KEY'),
-      publishableKey: getClerkPublishableKey(),
-    })),
+    clerkMiddleware(() => {
+      const secretKey = workerEnv('CLERK_SECRET_KEY')
+      const publishableKey = getClerkPublishableKey()
+      return {
+        ...(secretKey ? { secretKey } : {}),
+        ...(publishableKey ? { publishableKey } : {}),
+      }
+    }),
   ],
 }))

@@ -11,6 +11,7 @@ import {
   modelsForMake,
   yearOptions,
 } from '@/data/vehicleCatalog'
+import { modelForVehicle } from '@/data/vehicleModels'
 import type { VehicleInput } from '@/lib/vehicleTypes'
 
 type VehicleFormProps = {
@@ -41,6 +42,7 @@ const emptyForm: VehicleInput = {
   fuelType: '',
   drivetrain: '',
   titleStatus: '',
+  engineType: '',
   imageUrl: '',
   tags: [],
 }
@@ -74,6 +76,17 @@ export default function VehicleForm({
   const [remoteModels, setRemoteModels] = useState<string[]>([])
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const specsOpen = Boolean(
+    initial?.bodyStyle ||
+      initial?.transmission ||
+      initial?.fuelType ||
+      initial?.drivetrain ||
+      initial?.engineType ||
+      initial?.vin ||
+      initial?.licensePlate ||
+      initial?.purchaseDate ||
+      initial?.titleStatus,
+  )
 
   const selectedMake =
     customMake ||
@@ -144,287 +157,329 @@ export default function VehicleForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      <div className="grid gap-4 md:grid-cols-3">
-        <Field label="Year" required>
-          <select
-            className="field"
-            value={values.year}
-            onChange={(e) =>
-              setValues({ ...values, year: Number(e.target.value) })
-            }
-            required
-          >
-            {YEARS.map((year) => (
-              <option key={year} value={year}>
-                {year}
-              </option>
-            ))}
-          </select>
-        </Field>
-        <Field label="Make" required>
-          <select
-            className="field"
-            value={selectedMake}
-            onChange={(e) => {
-              const next = e.target.value
-              if (next === OTHER) {
-                setCustomMake(customMake || '')
-                setValues({ ...values, make: '', model: '' })
-              } else {
-                setCustomMake('')
-                setValues({ ...values, make: next, model: '' })
+    <form onSubmit={handleSubmit} className="space-y-8">
+      <Section title="Identity" hint="Year, make, and model are required.">
+        <div className="grid gap-4 md:grid-cols-3">
+          <Field label="Year" required>
+            <select
+              className="field"
+              value={values.year}
+              onChange={(e) =>
+                setValues({ ...values, year: Number(e.target.value) })
               }
-            }}
-            required
-          >
-            <option value="">Select make</option>
-            {US_MAKES.map((make) => (
-              <option key={make} value={make}>
-                {make}
-              </option>
-            ))}
-            <option value={OTHER}>Other</option>
-          </select>
-        </Field>
-        <Field label="Model" required>
-          <select
-            className="field"
-            value={
-              models.includes(values.model) ? values.model : customModel ? OTHER : values.model
-            }
-            onChange={(e) => {
-              const next = e.target.value
-              if (next === OTHER) {
-                setValues({ ...values, model: OTHER })
-              } else {
-                setCustomModel('')
-                setValues({ ...values, model: next })
+              required
+            >
+              {YEARS.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Make" required>
+            <select
+              className="field"
+              value={selectedMake}
+              onChange={(e) => {
+                const next = e.target.value
+                if (next === OTHER) {
+                  setCustomMake(customMake || '')
+                  setValues({ ...values, make: '', model: '' })
+                } else {
+                  setCustomMake('')
+                  setValues({ ...values, make: next, model: '' })
+                }
+              }}
+              required
+            >
+              <option value="">Select make</option>
+              {US_MAKES.map((make) => (
+                <option key={make} value={make}>
+                  {make}
+                </option>
+              ))}
+              <option value={OTHER}>Other</option>
+            </select>
+          </Field>
+          <Field label="Model" required>
+            <select
+              className="field"
+              value={
+                models.includes(values.model) ? values.model : customModel ? OTHER : values.model
               }
-            }}
-            required={selectedMake !== OTHER && !customMake}
-            disabled={!values.make && selectedMake !== OTHER}
-          >
-            <option value="">Select model</option>
-            {models.map((model) => (
-              <option key={model} value={model}>
-                {model}
-              </option>
-            ))}
-            <option value={OTHER}>Other</option>
-          </select>
-        </Field>
-      </div>
+              onChange={(e) => {
+                const next = e.target.value
+                if (next === OTHER) {
+                  setValues({ ...values, model: OTHER })
+                } else {
+                  setCustomModel('')
+                  setValues({ ...values, model: next })
+                }
+              }}
+              required={selectedMake !== OTHER && !customMake}
+              disabled={!values.make && selectedMake !== OTHER}
+            >
+              <option value="">Select model</option>
+              {models.map((model) => (
+                <option key={model} value={model}>
+                  {model}
+                </option>
+              ))}
+              <option value={OTHER}>Other</option>
+            </select>
+          </Field>
+        </div>
 
-      {selectedMake === OTHER ? (
-        <Field label="Custom make" required>
-          <input
-            className="field"
-            value={customMake}
-            onChange={(e) => {
-              setCustomMake(e.target.value)
-              setValues({ ...values, make: e.target.value })
-            }}
-            required
-          />
-        </Field>
-      ) : null}
+        {selectedMake === OTHER ? (
+          <Field label="Custom make" required>
+            <input
+              className="field"
+              value={customMake}
+              onChange={(e) => {
+                setCustomMake(e.target.value)
+                setValues({ ...values, make: e.target.value })
+              }}
+              required
+            />
+          </Field>
+        ) : null}
 
-      {values.model === OTHER || (customModel && !models.includes(values.model)) ? (
-        <Field label="Custom model" required>
-          <input
-            className="field"
-            value={customModel}
-            onChange={(e) => {
-              setCustomModel(e.target.value)
-              setValues({ ...values, model: e.target.value })
-            }}
-            required
-          />
-        </Field>
-      ) : null}
+        {values.model === OTHER || (customModel && !models.includes(values.model)) ? (
+          <Field label="Custom model" required>
+            <input
+              className="field"
+              value={customModel}
+              onChange={(e) => {
+                setCustomModel(e.target.value)
+                setValues({ ...values, model: e.target.value })
+              }}
+              required
+            />
+          </Field>
+        ) : null}
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Field label="Trim">
-          <input
-            className="field"
-            value={values.trim ?? ''}
-            onChange={(e) => setValues({ ...values, trim: e.target.value })}
-          />
-        </Field>
-        <Field label="Color">
-          <input
-            className="field"
-            value={values.color ?? ''}
-            onChange={(e) => setValues({ ...values, color: e.target.value })}
-          />
-        </Field>
-        <Field label="Odometer (mi)">
-          <input
-            className="field"
-            type="number"
-            min={0}
-            value={values.mileage}
-            onChange={(e) =>
-              setValues({ ...values, mileage: Number(e.target.value) })
-            }
-          />
-        </Field>
-        <Field label="Body style">
-          <select
-            className="field"
-            value={values.bodyStyle ?? ''}
-            onChange={(e) =>
-              setValues({ ...values, bodyStyle: e.target.value })
-            }
-          >
-            <option value="">Select</option>
-            {BODY_STYLES.map((style) => (
-              <option key={style} value={style}>
-                {style}
-              </option>
-            ))}
-          </select>
-        </Field>
-        <Field label="Transmission">
-          <select
-            className="field"
-            value={values.transmission ?? ''}
-            onChange={(e) =>
-              setValues({ ...values, transmission: e.target.value })
-            }
-          >
-            <option value="">Select</option>
-            {TRANSMISSIONS.map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
-          </select>
-        </Field>
-        <Field label="Drivetrain">
-          <select
-            className="field"
-            value={values.drivetrain ?? ''}
-            onChange={(e) =>
-              setValues({ ...values, drivetrain: e.target.value })
-            }
-          >
-            <option value="">Select</option>
-            {DRIVETRAINS.map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
-          </select>
-        </Field>
-        <Field label="Fuel type">
-          <select
-            className="field"
-            value={values.fuelType ?? ''}
-            onChange={(e) =>
-              setValues({ ...values, fuelType: e.target.value })
-            }
-          >
-            <option value="">Select</option>
-            {FUEL_TYPES.map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
-          </select>
-        </Field>
-        <Field label="Title status">
-          <select
-            className="field"
-            value={values.titleStatus ?? ''}
-            onChange={(e) =>
-              setValues({ ...values, titleStatus: e.target.value })
-            }
-          >
-            <option value="">Select</option>
-            {TITLE_STATUSES.map((item) => (
-              <option key={item} value={item}>
-                {item}
-              </option>
-            ))}
-          </select>
-        </Field>
-        <Field label="VIN">
-          <input
-            className="field"
-            value={values.vin ?? ''}
-            onChange={(e) => setValues({ ...values, vin: e.target.value })}
-          />
-        </Field>
-        <Field label="License plate">
-          <input
-            className="field"
-            value={values.licensePlate ?? ''}
-            onChange={(e) =>
-              setValues({ ...values, licensePlate: e.target.value })
-            }
-          />
-        </Field>
-        <Field label="Purchase date">
-          <input
-            className="field"
-            type="date"
-            value={values.purchaseDate ?? ''}
-            onChange={(e) =>
-              setValues({ ...values, purchaseDate: e.target.value })
-            }
-          />
-        </Field>
-      </div>
+        <div className="grid gap-4 md:grid-cols-3">
+          <Field label="Trim">
+            <input
+              className="field"
+              value={values.trim ?? ''}
+              onChange={(e) => setValues({ ...values, trim: e.target.value })}
+            />
+          </Field>
+          <Field label="Color">
+            <input
+              className="field"
+              value={values.color ?? ''}
+              onChange={(e) => setValues({ ...values, color: e.target.value })}
+              placeholder="Red, white, #9e0b0f…"
+            />
+          </Field>
+          <Field label="Odometer (mi)">
+            <input
+              className="field"
+              type="number"
+              min={0}
+              value={values.mileage}
+              onChange={(e) =>
+                setValues({ ...values, mileage: Number(e.target.value) })
+              }
+            />
+          </Field>
+        </div>
+        {modelForVehicle({
+          year: values.year,
+          make: selectedMake === OTHER ? customMake : values.make,
+          model: customModel || values.model,
+          bodyStyle: values.bodyStyle,
+        }) ? (
+          <p className="text-sm text-garage-muted">
+            This vehicle has a 3D showcase model. Set color to red, white, or a hex code to tint the paint.
+          </p>
+        ) : null}
+      </Section>
 
-      <VehicleImageField
-        year={values.year}
-        make={selectedMake === OTHER ? customMake : values.make}
-        model={customModel || values.model}
-        value={values.imageUrl ?? ''}
-        onChange={(imageUrl) => setValues({ ...values, imageUrl })}
-      />
-
-      <Field label="Tags">
-        <input
-          className="field"
-          value={tagsText}
-          onChange={(e) => setTagsText(e.target.value)}
-          placeholder="Daily, Project, For Sale"
+      <Section title="Photo">
+        <VehicleImageField
+          year={values.year}
+          make={selectedMake === OTHER ? customMake : values.make}
+          model={customModel || values.model}
+          value={values.imageUrl ?? ''}
+          onChange={(imageUrl) => setValues({ ...values, imageUrl })}
         />
-      </Field>
+      </Section>
 
-      <Field label="Notes">
-        <textarea
-          className="field min-h-24"
-          value={values.notes ?? ''}
-          onChange={(e) => setValues({ ...values, notes: e.target.value })}
-        />
-      </Field>
+      <details
+        className="group rounded-sm border border-garage-border"
+        defaultOpen={specsOpen}
+      >
+        <summary className="cursor-pointer list-none px-4 py-3 text-sm font-medium [&::-webkit-details-marker]:hidden">
+          <span className="flex items-center justify-between">
+            Specs & paperwork
+            <span className="text-xs text-garage-muted group-open:hidden">Optional</span>
+            <span className="hidden text-xs text-garage-muted group-open:inline">Hide</span>
+          </span>
+        </summary>
+        <div className="space-y-4 border-t border-garage-border p-4">
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field label="Body style">
+              <select
+                className="field"
+                value={values.bodyStyle ?? ''}
+                onChange={(e) =>
+                  setValues({ ...values, bodyStyle: e.target.value })
+                }
+              >
+                <option value="">Select</option>
+                {BODY_STYLES.map((style) => (
+                  <option key={style} value={style}>
+                    {style}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Transmission">
+              <select
+                className="field"
+                value={values.transmission ?? ''}
+                onChange={(e) =>
+                  setValues({ ...values, transmission: e.target.value })
+                }
+              >
+                <option value="">Select</option>
+                {TRANSMISSIONS.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Drivetrain">
+              <select
+                className="field"
+                value={values.drivetrain ?? ''}
+                onChange={(e) =>
+                  setValues({ ...values, drivetrain: e.target.value })
+                }
+              >
+                <option value="">Select</option>
+                {DRIVETRAINS.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Fuel type">
+              <select
+                className="field"
+                value={values.fuelType ?? ''}
+                onChange={(e) =>
+                  setValues({ ...values, fuelType: e.target.value })
+                }
+              >
+                <option value="">Select</option>
+                {FUEL_TYPES.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Title status">
+              <select
+                className="field"
+                value={values.titleStatus ?? ''}
+                onChange={(e) =>
+                  setValues({ ...values, titleStatus: e.target.value })
+                }
+              >
+                <option value="">Select</option>
+                {TITLE_STATUSES.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Engine">
+              <input
+                className="field"
+                value={values.engineType ?? ''}
+                onChange={(e) =>
+                  setValues({ ...values, engineType: e.target.value })
+                }
+                placeholder="V8, I4, electric…"
+              />
+            </Field>
+            <Field label="VIN">
+              <input
+                className="field"
+                value={values.vin ?? ''}
+                onChange={(e) => setValues({ ...values, vin: e.target.value })}
+              />
+            </Field>
+            <Field label="License plate">
+              <input
+                className="field"
+                value={values.licensePlate ?? ''}
+                onChange={(e) =>
+                  setValues({ ...values, licensePlate: e.target.value })
+                }
+              />
+            </Field>
+            <Field label="Purchase date">
+              <input
+                className="field"
+                type="date"
+                value={values.purchaseDate ?? ''}
+                onChange={(e) =>
+                  setValues({ ...values, purchaseDate: e.target.value })
+                }
+              />
+            </Field>
+          </div>
+        </div>
+      </details>
 
-      <div className="flex flex-wrap gap-4">
-        <label className="flex items-center gap-2 text-sm text-garage-muted">
+      <Section title="Notes">
+        <Field label="Tags">
           <input
-            type="checkbox"
-            checked={values.isProject}
-            onChange={(e) =>
-              setValues({ ...values, isProject: e.target.checked })
-            }
+            className="field"
+            value={tagsText}
+            onChange={(e) => setTagsText(e.target.value)}
+            placeholder="Daily, Project, For Sale"
           />
-          Project vehicle
-        </label>
-        <label className="flex items-center gap-2 text-sm text-garage-muted">
-          <input
-            type="checkbox"
-            checked={values.isFavorite}
-            onChange={(e) =>
-              setValues({ ...values, isFavorite: e.target.checked })
-            }
+        </Field>
+        <Field label="Notes">
+          <textarea
+            className="field min-h-24"
+            value={values.notes ?? ''}
+            onChange={(e) => setValues({ ...values, notes: e.target.value })}
           />
-          Favorite
-        </label>
-      </div>
+        </Field>
+        <div className="flex flex-wrap gap-4">
+          <label className="flex items-center gap-2 text-sm text-garage-muted">
+            <input
+              type="checkbox"
+              checked={values.isProject}
+              onChange={(e) =>
+                setValues({ ...values, isProject: e.target.checked })
+              }
+            />
+            Project vehicle
+          </label>
+          <label className="flex items-center gap-2 text-sm text-garage-muted">
+            <input
+              type="checkbox"
+              checked={values.isFavorite}
+              onChange={(e) =>
+                setValues({ ...values, isFavorite: e.target.checked })
+              }
+            />
+            Favorite
+          </label>
+        </div>
+      </Section>
 
       {error ? <p className="text-sm text-red-300">{error}</p> : null}
 
@@ -439,6 +494,26 @@ export default function VehicleForm({
         ) : null}
       </div>
     </form>
+  )
+}
+
+function Section({
+  title,
+  hint,
+  children,
+}: {
+  title: string
+  hint?: string
+  children: React.ReactNode
+}) {
+  return (
+    <section className="space-y-4">
+      <div>
+        <p className="label-caps">{title}</p>
+        {hint ? <p className="mt-1 text-sm text-garage-muted">{hint}</p> : null}
+      </div>
+      {children}
+    </section>
   )
 }
 

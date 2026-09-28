@@ -49,12 +49,43 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url)),
+        'use-sync-external-store/shim/with-selector.js': fileURLToPath(
+          new URL(
+            './src/shims/use-sync-external-store-with-selector.ts',
+            import.meta.url,
+          ),
+        ),
+        'use-sync-external-store/shim/with-selector': fileURLToPath(
+          new URL(
+            './src/shims/use-sync-external-store-with-selector.ts',
+            import.meta.url,
+          ),
+        ),
       },
       dedupe: ['@clerk/react', 'react', 'react-dom'],
     },
+    assetsInclude: ['**/*.glb'],
     optimizeDeps: {
       include: ['@clerk/react', '@clerk/tanstack-react-start'],
-      exclude: ['@clerk/backend'],
+      exclude: [
+        '@clerk/backend',
+        'three',
+        '@react-three/fiber',
+        '@react-three/drei',
+        '@cloudflare/unenv-preset/node/process',
+        'use-sync-external-store',
+        'use-sync-external-store/shim/with-selector',
+      ],
+    },
+    ssr: {
+      optimizeDeps: {
+        exclude: [
+          'three',
+          '@react-three/fiber',
+          '@react-three/drei',
+          '@cloudflare/unenv-preset/node/process',
+        ],
+      },
     },
     plugins: [
       cloudflare({ viteEnvironment: { name: 'ssr' } }),
