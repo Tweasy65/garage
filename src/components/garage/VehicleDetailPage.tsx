@@ -3,9 +3,11 @@ import { useNavigate, useRouter } from '@tanstack/react-router'
 import Modal from '@/components/garage/Modal'
 import VehicleForm from '@/components/garage/VehicleForm'
 import VehicleOverviewTab from '@/components/garage/VehicleOverviewTab'
+import VehicleServiceTab from '@/components/garage/VehicleServiceTab'
 import { useVehicleDetailContext } from '@/components/garage/vehicleDetailContext'
 import { vehicleToInput } from '@/lib/vehicleFormValues'
-import type { VehicleInput } from '@/lib/vehicleTypes'
+import type { MaintenanceInput, VehicleInput } from '@/lib/vehicleTypes'
+import { addMaintenanceRecord, deleteMaintenanceRecord } from '@/server/maintenance'
 import { deleteVehicle, updateVehicle } from '@/server/vehicles'
 
 export default function VehicleDetailPage() {
@@ -26,16 +28,31 @@ export default function VehicleDetailPage() {
     await router.navigate({ to: '/' })
   }
 
+  async function handleAddRecord(values: MaintenanceInput) {
+    await addMaintenanceRecord({ data: values })
+    await router.invalidate()
+    await navigate({ search: (prev) => ({ ...prev, log: undefined }), replace: true })
+  }
+
+  async function handleDeleteRecord(id: string) {
+    await deleteMaintenanceRecord({ data: { id } })
+    await router.invalidate()
+  }
+
   function openEdit() {
     void navigate({ search: (prev) => ({ ...prev, edit: true }) })
   }
 
   function openLogService() {
-    void navigate({ search: (prev) => ({ ...prev, tab: 'service' }) })
+    void navigate({ search: (prev) => ({ ...prev, tab: 'service', log: true }) })
   }
 
   function closeEdit() {
     void navigate({ search: (prev) => ({ ...prev, edit: undefined }), replace: true })
+  }
+
+  function closeLog() {
+    void navigate({ search: (prev) => ({ ...prev, log: undefined }), replace: true })
   }
 
   return (
@@ -47,11 +64,22 @@ export default function VehicleDetailPage() {
           onLogService={openLogService}
           onDelete={() => void handleDelete()}
         />
-      ) : (
+      ) : null}
+      {tab === 'service' ? (
+        <VehicleServiceTab
+          vehicle={vehicle}
+          logOpen={Boolean(search.log)}
+          onOpenLog={openLogService}
+          onCloseLog={closeLog}
+          onAddRecord={handleAddRecord}
+          onDeleteRecord={handleDeleteRecord}
+        />
+      ) : null}
+      {tab === 'media' ? (
         <div role="tabpanel" className="section-body text-sm text-garage-muted">
-          <p>This tab is coming in the next update.</p>
+          <p>Media tab coming next.</p>
         </div>
-      )}
+      ) : null}
 
       <Modal
         open={Boolean(search.edit)}
