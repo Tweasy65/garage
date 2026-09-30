@@ -44,6 +44,7 @@ export default function VehicleDetailTabs({
             log: tab.id === active ? search?.log : undefined,
           }}
           replace
+          id={`tab-${tab.id}`}
           role="tab"
           aria-selected={active === tab.id}
           className={`segment-tab ${active === tab.id ? 'segment-tab-active' : ''}`}

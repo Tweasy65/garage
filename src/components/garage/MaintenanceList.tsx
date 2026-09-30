@@ -29,7 +29,7 @@ export default function MaintenanceList({
       {records.map((record) => (
         <div
           key={record.id}
-          className="flex items-start justify-between gap-4 border border-garage-border p-4"
+          className="flex items-start justify-between gap-4 rounded-sm border border-garage-border bg-garage-panel-2/40 px-4 py-3"
         >
           <div className="min-w-0">
             <div className="flex items-center gap-2">

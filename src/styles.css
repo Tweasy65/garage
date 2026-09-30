@@ -72,7 +72,7 @@
   }
 
   .segment-tab {
-    @apply rounded-sm px-3 py-1.5 text-sm font-medium text-garage-muted transition hover:text-garage-text;
+    @apply rounded-sm px-3 py-1.5 text-sm font-medium text-garage-muted transition hover:text-garage-text focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-garage-accent;
   }
 
   .segment-tab-active {
