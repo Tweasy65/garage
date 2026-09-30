@@ -66,4 +66,40 @@
   .hide-scrollbar::-webkit-scrollbar {
     display: none;
   }
+
+  .segment-tabs {
+    @apply flex gap-1 border-b border-garage-border px-4 py-3 md:px-6;
+  }
+
+  .segment-tab {
+    @apply rounded-sm px-3 py-1.5 text-sm font-medium text-garage-muted transition hover:text-garage-text;
+  }
+
+  .segment-tab-active {
+    @apply bg-garage-text text-garage-bg hover:text-garage-bg;
+  }
+
+  .section-header {
+    @apply flex flex-wrap items-center justify-between gap-3 border-b border-garage-border px-6 py-4;
+  }
+
+  .section-body {
+    @apply px-6 py-5;
+  }
+
+  .data-rows {
+    @apply divide-y divide-garage-border;
+  }
+
+  .data-row {
+    @apply grid gap-1 py-3 sm:grid-cols-[minmax(8rem,12rem)_1fr] sm:items-baseline sm:gap-4;
+  }
+
+  .data-row-label {
+    @apply text-sm text-garage-muted;
+  }
+
+  .data-row-value {
+    @apply text-sm font-medium;
+  }
 }

@@ -3,10 +3,33 @@ import { Link, Outlet, createFileRoute } from '@tanstack/react-router'
 
 import PageShell from '@/components/garage/PageShell'
 import SignInLanding from '@/components/garage/SignInLanding'
+import VehicleDetailTabs, {
+  parseVehicleDetailTab,
+  type VehicleDetailTab,
+} from '@/components/garage/VehicleDetailTabs'
 import VehicleHero from '@/components/garage/VehicleHero'
 import { getVehicle } from '@/server/vehicles'
 
+export type VehicleDetailSearch = {
+  tab?: VehicleDetailTab
+  edit?: boolean
+  log?: boolean
+}
+
+function parseFlag(value: unknown): boolean | undefined {
+  if (value === true || value === '1' || value === 'true') return true
+  return undefined
+}
+
 export const Route = createFileRoute('/vehicles/$vehicleId')({
+  validateSearch: (search: Record<string, unknown>): VehicleDetailSearch => {
+    const tab = parseVehicleDetailTab(search.tab)
+    return {
+      tab: tab === 'overview' ? undefined : tab,
+      edit: parseFlag(search.edit),
+      log: parseFlag(search.log),
+    }
+  },
   loader: ({ params }) => getVehicle({ data: { id: params.vehicleId } }),
   component: VehicleLayout,
   errorComponent: VehicleError,
@@ -14,6 +37,8 @@ export const Route = createFileRoute('/vehicles/$vehicleId')({
 
 function VehicleLayout() {
   const { vehicle } = Route.useLoaderData()
+  const search = Route.useSearch()
+  const tab = parseVehicleDetailTab(search.tab)
 
   return (
     <PageShell>
@@ -24,7 +49,12 @@ function VehicleLayout() {
         ← Collection
       </Link>
       <VehicleHero vehicle={vehicle} />
-      <div className="garage-panel">
+      <div className="garage-panel overflow-hidden">
+        <VehicleDetailTabs
+          vehicleId={vehicle.id}
+          active={tab}
+          search={{ edit: search.edit, log: search.log }}
+        />
         <Outlet />
       </div>
     </PageShell>
