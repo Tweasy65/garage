@@ -2,6 +2,7 @@ import { useNavigate, useRouter } from '@tanstack/react-router'
 
 import Modal from '@/components/garage/Modal'
 import VehicleForm from '@/components/garage/VehicleForm'
+import VehicleMediaTab from '@/components/garage/VehicleMediaTab'
 import VehicleOverviewTab from '@/components/garage/VehicleOverviewTab'
 import VehicleServiceTab from '@/components/garage/VehicleServiceTab'
 import { useVehicleDetailContext } from '@/components/garage/vehicleDetailContext'
@@ -76,9 +77,7 @@ export default function VehicleDetailPage() {
         />
       ) : null}
       {tab === 'media' ? (
-        <div role="tabpanel" className="section-body text-sm text-garage-muted">
-          <p>Media tab coming next.</p>
-        </div>
+        <VehicleMediaTab vehicle={vehicle} onEdit={openEdit} />
       ) : null}
 
       <Modal
