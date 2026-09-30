@@ -1,3 +1,4 @@
+import { Loader2 } from 'lucide-react'
 import { useEffect, useState, type ComponentProps } from 'react'
 
 import type VehicleModelViewer from '@/components/garage/VehicleModelViewer'
@@ -37,9 +38,10 @@ export default function VehicleModelCanvas(props: ViewerProps) {
   if (!Viewer) {
     return (
       <div
-        className={`flex h-72 items-center justify-center bg-[#141416] text-sm text-garage-muted md:h-80 ${props.className ?? ''}`}
+        className={`flex h-72 items-center justify-center gap-2 bg-[#141416] text-sm text-garage-muted md:h-80 ${props.className ?? ''}`}
       >
-        Loading 3D model…
+        <Loader2 className="size-4 animate-spin" />
+        Loading 3D viewer…
       </div>
     )
   }

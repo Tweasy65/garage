@@ -1,6 +1,6 @@
 import { auth } from '@clerk/tanstack-react-start/server'
 import { createServerFn } from '@tanstack/react-start'
-import { and, count, desc, eq } from 'drizzle-orm'
+import { and, desc, eq } from 'drizzle-orm'
 
 import { db } from '@/db'
 import { maintenanceRecords, vehicles } from '@/db/schema'
@@ -8,6 +8,8 @@ import { computeMaintenanceAlerts } from '@/lib/maintenanceAlerts'
 import type { MaintenanceAlert } from '@/lib/maintenanceAlerts'
 import type {
   MaintenanceRecord,
+  ServiceRecord,
+  VehicleAsset,
   VehicleDetail,
   VehicleInput,
   VehicleSummary,
@@ -39,7 +41,20 @@ function mapMaintenance(row: typeof maintenanceRecords.$inferSelect): Maintenanc
 }
 
 function mapVehicleSummary(
-  row: typeof vehicles.$inferSelect,
+  row: Pick<
+    typeof vehicles.$inferSelect,
+    | 'id'
+    | 'make'
+    | 'model'
+    | 'trim'
+    | 'year'
+    | 'color'
+    | 'mileage'
+    | 'isProject'
+    | 'isFavorite'
+    | 'imageUrl'
+    | 'tags'
+  >,
   maintenanceCount: number,
 ): VehicleSummary {
   return {
@@ -78,8 +93,51 @@ function mapVehicleDetail(
     mpgCity: row.mpgCity,
     mpgHighway: row.mpgHighway,
     titleStatus: row.titleStatus,
+    assets: normalizeAssets(row.assets, row.imageUrl),
+    modelAssetId: row.modelAssetId,
     maintenance,
   }
+}
+
+const MAX_ASSETS = 16
+const MAX_ASSET_CHARS = 12_000_000
+
+function normalizeAssets(
+  assets: VehicleAsset[] | null | undefined,
+  coverUrl?: string | null,
+): VehicleAsset[] {
+  const list = Array.isArray(assets) ? assets : []
+  const cleaned: VehicleAsset[] = []
+  for (const asset of list) {
+    if (!asset || typeof asset !== 'object') continue
+    if (asset.kind !== 'image' && asset.kind !== 'model') continue
+    const src = typeof asset.src === 'string' ? asset.src.trim() : ''
+    const id = typeof asset.id === 'string' ? asset.id.trim() : ''
+    if (!src || !id || src.length > MAX_ASSET_CHARS) continue
+    cleaned.push({
+      id,
+      kind: asset.kind,
+      name: (asset.name || 'Untitled').slice(0, 120),
+      mime: (asset.mime || '').slice(0, 80),
+      src,
+      createdAt: asset.createdAt || new Date().toISOString(),
+    })
+    if (cleaned.length >= MAX_ASSETS) break
+  }
+  if (
+    coverUrl &&
+    !cleaned.some((asset) => asset.kind === 'image' && asset.src === coverUrl)
+  ) {
+    cleaned.unshift({
+      id: 'legacy-cover',
+      kind: 'image',
+      name: 'Cover photo',
+      mime: 'image/*',
+      src: coverUrl,
+      createdAt: new Date().toISOString(),
+    })
+  }
+  return cleaned
 }
 
 function normalizeVehicleInput(data: VehicleInput) {
@@ -92,6 +150,20 @@ function normalizeVehicleInput(data: VehicleInput) {
   if (!Number.isFinite(data.mileage) || data.mileage < 0) {
     throw new Error('Mileage must be zero or greater')
   }
+
+  const assets = normalizeAssets(data.assets, data.imageUrl)
+  const requestedCover = data.imageUrl?.trim() || null
+  const imageUrl =
+    requestedCover &&
+    assets.some((asset) => asset.kind === 'image' && asset.src === requestedCover)
+      ? requestedCover
+      : (assets.find((asset) => asset.kind === 'image')?.src ?? null)
+  const requestedModel = data.modelAssetId?.trim() || null
+  const modelAssetId =
+    requestedModel &&
+    assets.some((asset) => asset.id === requestedModel && asset.kind === 'model')
+      ? requestedModel
+      : (assets.find((asset) => asset.kind === 'model')?.id ?? null)
 
   return {
     make,
@@ -116,7 +188,9 @@ function normalizeVehicleInput(data: VehicleInput) {
     mpgCity: data.mpgCity ?? null,
     mpgHighway: data.mpgHighway ?? null,
     titleStatus: data.titleStatus?.trim() || null,
-    imageUrl: data.imageUrl?.trim() || null,
+    imageUrl,
+    assets,
+    modelAssetId,
     tags: (data.tags ?? []).map((tag) => tag.trim()).filter(Boolean),
   }
 }
@@ -126,21 +200,40 @@ export const listVehicles = createServerFn({ method: 'GET' }).handler(async () =
   if (!userId) {
     return { vehicles: [] as VehicleSummary[], alerts: [] as MaintenanceAlert[] }
   }
+  const garage = await loadGarage(userId)
+  return { vehicles: garage.vehicles, alerts: garage.alerts }
+})
 
+export const listService = createServerFn({ method: 'GET' }).handler(async () => {
+  const { userId } = await auth()
+  if (!userId) {
+    return {
+      vehicles: [] as VehicleSummary[],
+      alerts: [] as MaintenanceAlert[],
+      records: [] as ServiceRecord[],
+    }
+  }
+  return loadGarage(userId)
+})
+
+async function loadGarage(userId: string) {
   const rows = await db
     .select({
-      vehicle: vehicles,
-      maintenanceCount: count(maintenanceRecords.id),
+      id: vehicles.id,
+      make: vehicles.make,
+      model: vehicles.model,
+      trim: vehicles.trim,
+      year: vehicles.year,
+      color: vehicles.color,
+      mileage: vehicles.mileage,
+      isProject: vehicles.isProject,
+      isFavorite: vehicles.isFavorite,
+      imageUrl: vehicles.imageUrl,
+      tags: vehicles.tags,
     })
     .from(vehicles)
-    .leftJoin(maintenanceRecords, eq(maintenanceRecords.vehicleId, vehicles.id))
     .where(eq(vehicles.userId, userId))
-    .groupBy(vehicles.id)
     .orderBy(desc(vehicles.isFavorite), desc(vehicles.updatedAt))
-
-  const summaries = rows.map((row) =>
-    mapVehicleSummary(row.vehicle, Number(row.maintenanceCount)),
-  )
 
   const maintenanceRows = await db
     .select()
@@ -154,11 +247,33 @@ export const listVehicles = createServerFn({ method: 'GET' }).handler(async () =
     recordsByVehicle[row.vehicleId] = list
   }
 
+  const vehiclesList = rows.map((row) =>
+    mapVehicleSummary(row, recordsByVehicle[row.id]?.length ?? 0),
+  )
+  const labels = new Map(
+    vehiclesList.map((vehicle) => [
+      vehicle.id,
+      `${vehicle.year} ${vehicle.make} ${vehicle.model}`,
+    ]),
+  )
+  const records: ServiceRecord[] = (recordsByVehicle
+    ? Object.values(recordsByVehicle).flat()
+    : []
+  )
+    .map((record) => ({
+      ...record,
+      vehicleLabel: labels.get(record.vehicleId) ?? 'Vehicle',
+    }))
+    .sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+    )
+
   return {
-    vehicles: summaries,
-    alerts: computeMaintenanceAlerts(summaries, recordsByVehicle),
+    vehicles: vehiclesList,
+    alerts: computeMaintenanceAlerts(vehiclesList, recordsByVehicle),
+    records,
   }
-})
+}
 
 export const getVehicle = createServerFn({ method: 'GET' })
   .inputValidator((data: { id: string }) => data)

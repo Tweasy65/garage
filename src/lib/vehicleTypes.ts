@@ -1,3 +1,14 @@
+export type VehicleAssetKind = 'image' | 'model'
+
+export type VehicleAsset = {
+  id: string
+  kind: VehicleAssetKind
+  name: string
+  mime: string
+  src: string
+  createdAt: string
+}
+
 export type VehicleInput = {
   make: string
   model: string
@@ -22,6 +33,8 @@ export type VehicleInput = {
   mpgHighway?: number | null
   titleStatus?: string | null
   imageUrl?: string | null
+  assets?: VehicleAsset[]
+  modelAssetId?: string | null
   tags?: string[]
 }
 
@@ -74,6 +87,8 @@ export type VehicleDetail = VehicleSummary & {
   mpgCity: number | null
   mpgHighway: number | null
   titleStatus: string | null
+  assets: VehicleAsset[]
+  modelAssetId: string | null
   maintenance: MaintenanceRecord[]
 }
 
@@ -88,4 +103,8 @@ export type MaintenanceRecord = {
   serviceProvider: string | null
   nextDueDate: string | null
   nextDueMileage: number | null
+}
+
+export type ServiceRecord = MaintenanceRecord & {
+  vehicleLabel: string
 }

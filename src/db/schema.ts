@@ -39,6 +39,20 @@ export const vehicles = pgTable(
     mpgHighway: integer('mpg_highway'),
     titleStatus: text('title_status'),
     imageUrl: text('image_url'),
+    assets: jsonb('assets')
+      .$type<
+        Array<{
+          id: string
+          kind: 'image' | 'model'
+          name: string
+          mime: string
+          src: string
+          createdAt: string
+        }>
+      >()
+      .notNull()
+      .default([]),
+    modelAssetId: text('model_asset_id'),
     tags: jsonb('tags').$type<string[]>().notNull().default([]),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()

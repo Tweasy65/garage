@@ -1,22 +1,49 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { MAINTENANCE_TYPES } from '@/data/vehicleCatalog'
 import type { MaintenanceInput } from '@/lib/vehicleTypes'
 
+type VehicleOption = {
+  id: string
+  label: string
+  mileage: number
+}
+
 type MaintenanceFormProps = {
-  vehicleId: string
+  vehicleId?: string
+  vehicles?: VehicleOption[]
   defaultMileage?: number
   onSubmit: (values: MaintenanceInput) => Promise<void>
+  onCancel?: () => void
 }
 
 export default function MaintenanceForm({
   vehicleId,
+  vehicles,
   defaultMileage,
   onSubmit,
+  onCancel,
 }: MaintenanceFormProps) {
-  const [values, setValues] = useState(() => emptyValues(defaultMileage))
+  const [selectedId, setSelectedId] = useState(
+    vehicleId ?? vehicles?.[0]?.id ?? '',
+  )
+  const selected = vehicles?.find((vehicle) => vehicle.id === selectedId)
+  const mileageDefault = selected?.mileage ?? defaultMileage
+  const [values, setValues] = useState(() => emptyValues(mileageDefault))
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const showVehicleSelect = (vehicles?.length ?? 0) > 1 && !vehicleId
+
+  useEffect(() => {
+    const nextId = vehicleId ?? vehicles?.[0]?.id ?? ''
+    setSelectedId(nextId)
+    const nextMileage =
+      vehicles?.find((vehicle) => vehicle.id === nextId)?.mileage ?? defaultMileage
+    setValues((current) => ({
+      ...current,
+      mileage: nextMileage != null ? String(nextMileage) : current.mileage,
+    }))
+  }, [defaultMileage, vehicleId, vehicles])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -24,9 +51,15 @@ export default function MaintenanceForm({
     setError(null)
     const type =
       values.type === 'Other' ? values.customType.trim() : values.type
+    const nextVehicleId = vehicleId || selectedId
+    if (!nextVehicleId) {
+      setPending(false)
+      setError('Choose a vehicle')
+      return
+    }
     try {
       await onSubmit({
-        vehicleId,
+        vehicleId: nextVehicleId,
         type,
         date: values.date,
         description: values.description || null,
@@ -38,7 +71,7 @@ export default function MaintenanceForm({
           ? Number(values.nextDueMileage)
           : null,
       })
-      setValues(emptyValues(values.mileage ? Number(values.mileage) : defaultMileage))
+      setValues(emptyValues(values.mileage ? Number(values.mileage) : mileageDefault))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
     } finally {
@@ -47,14 +80,34 @@ export default function MaintenanceForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 rounded-sm border border-garage-border bg-garage-panel-2/40 p-4">
-      <div>
-        <p className="label-caps">Log service</p>
-        <p className="mt-1 text-sm text-garage-muted">
-          Use the type dropdown so Garage can track the next interval.
-        </p>
-      </div>
+    <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid gap-4 md:grid-cols-2">
+        {showVehicleSelect || (!vehicleId && (vehicles?.length ?? 0) > 0) ? (
+          <label className="block space-y-1.5 md:col-span-2">
+            <span className="label-caps">Vehicle *</span>
+            <select
+              className="field"
+              value={selectedId}
+              onChange={(e) => {
+                const id = e.target.value
+                setSelectedId(id)
+                const miles = vehicles?.find((vehicle) => vehicle.id === id)?.mileage
+                setValues((current) => ({
+                  ...current,
+                  mileage: miles != null ? String(miles) : current.mileage,
+                }))
+              }}
+              required
+            >
+              <option value="">Select vehicle</option>
+              {vehicles?.map((vehicle) => (
+                <option key={vehicle.id} value={vehicle.id}>
+                  {vehicle.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
         <label className="block space-y-1.5">
           <span className="label-caps">Type *</span>
           <select
@@ -63,9 +116,9 @@ export default function MaintenanceForm({
             onChange={(e) => setValues({ ...values, type: e.target.value })}
             required
           >
-            {MAINTENANCE_TYPES.map((type) => (
-              <option key={type} value={type}>
-                {type}
+            {MAINTENANCE_TYPES.map((item) => (
+              <option key={item} value={item}>
+                {item}
               </option>
             ))}
           </select>
@@ -101,7 +154,7 @@ export default function MaintenanceForm({
             min={0}
             value={values.mileage}
             onChange={(e) => setValues({ ...values, mileage: e.target.value })}
-            placeholder={defaultMileage ? String(defaultMileage) : undefined}
+            placeholder={mileageDefault ? String(mileageDefault) : undefined}
           />
         </label>
         <label className="block space-y-1.5">
@@ -160,9 +213,16 @@ export default function MaintenanceForm({
         />
       </label>
       {error ? <p className="text-sm text-red-300">{error}</p> : null}
-      <button type="submit" disabled={pending} className="btn-primary">
-        {pending ? 'Saving…' : 'Add record'}
-      </button>
+      <div className="flex gap-3">
+        <button type="submit" disabled={pending} className="btn-primary">
+          {pending ? 'Saving…' : 'Add record'}
+        </button>
+        {onCancel ? (
+          <button type="button" onClick={onCancel} className="btn">
+            Cancel
+          </button>
+        ) : null}
+      </div>
     </form>
   )
 }

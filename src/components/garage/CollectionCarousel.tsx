@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router'
 import { ChevronLeft, ChevronRight, Star } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 
@@ -5,26 +6,31 @@ import VehicleModelCanvas from '@/components/garage/VehicleModelCanvas'
 import VehicleThumb from '@/components/garage/VehicleThumb'
 import {
   FEATURED_MODEL,
-  modelForVehicle,
   paintColorFromName,
+  specForVehicle,
 } from '@/data/vehicleModels'
 import { formatMiles } from '@/lib/format'
-import type { VehicleSummary } from '@/lib/vehicleTypes'
+import type { VehicleDetail, VehicleSummary } from '@/lib/vehicleTypes'
 
 type CollectionCarouselProps = {
   vehicles: VehicleSummary[]
   selectedId: string | null
+  selectedDetail?: VehicleDetail | null
   onSelect: (id: string) => void
 }
 
 export default function CollectionCarousel({
   vehicles,
   selectedId,
+  selectedDetail,
   onSelect,
 }: CollectionCarouselProps) {
   const scroller = useRef<HTMLDivElement>(null)
-  const selected = vehicles.find((vehicle) => vehicle.id === selectedId) ?? vehicles[0]
-  const matched = selected ? modelForVehicle(selected) : null
+  const selectedSummary =
+    vehicles.find((vehicle) => vehicle.id === selectedId) ?? vehicles[0]
+  const selected =
+    selectedDetail?.id === selectedSummary?.id ? selectedDetail : selectedSummary
+  const matched = selected ? specForVehicle(selected) : null
   const spec = matched ?? FEATURED_MODEL
   const [hoodOpen, setHoodOpen] = useState(false)
   const [trunkOpen, setTrunkOpen] = useState(false)
@@ -56,6 +62,15 @@ export default function CollectionCarousel({
           <h2 className="mt-1 text-lg font-semibold">Showcase</h2>
         </div>
         <div className="flex gap-2">
+          {selectedId ? (
+            <Link
+              to="/vehicles/$vehicleId"
+              params={{ vehicleId: selectedId }}
+              className="btn px-3 text-xs"
+            >
+              View vehicle
+            </Link>
+          ) : null}
           <button
             type="button"
             className={`btn px-3 text-xs ${hoodOpen ? 'border-garage-accent bg-white/10' : ''}`}
@@ -104,7 +119,7 @@ export default function CollectionCarousel({
         <p className="mt-1 text-sm text-garage-muted">
           {matched && selected
             ? `${formatMiles(selected.mileage)}${selected.trim ? ` · ${selected.trim}` : ''}${selected.isProject ? ' · Project' : ''} · Drag to orbit`
-            : 'Featured model · Drag to orbit · Add a Ford Mustang to tint paint from your garage'}
+            : 'Featured model · Drag to orbit · Zoom with the controls'}
         </p>
       </div>
 

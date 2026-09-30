@@ -1,3 +1,5 @@
+import type { VehicleAsset } from '@/lib/vehicleTypes'
+
 export type VehicleModelSpec = {
   id: string
   year: number
@@ -48,12 +50,39 @@ type VehicleMatch = {
   make: string
   model: string
   bodyStyle?: string | null
+  assets?: VehicleAsset[]
+  modelAssetId?: string | null
 }
 
 export const FEATURED_MODEL = VEHICLE_MODELS[0]
 
 function normalize(value: string): string {
   return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, ' ')
+}
+
+export function specFromAsset(
+  vehicle: Pick<VehicleMatch, 'year' | 'make' | 'model'>,
+  asset: VehicleAsset,
+): VehicleModelSpec {
+  return {
+    id: asset.id,
+    year: vehicle.year,
+    make: vehicle.make,
+    model: vehicle.model,
+    src: asset.src,
+    hood: 'Paint_Hood',
+    trunk: 'Paint_Trunk',
+    doorL: 'Paint_Door_L',
+    doorR: 'Paint_Door_R',
+  }
+}
+
+export function specForVehicle(vehicle: VehicleMatch): VehicleModelSpec | null {
+  const custom = vehicle.assets?.find(
+    (asset) => asset.kind === 'model' && asset.id === vehicle.modelAssetId,
+  )
+  if (custom?.src) return specFromAsset(vehicle, custom)
+  return modelForVehicle(vehicle)
 }
 
 export function modelForVehicle(vehicle: VehicleMatch): VehicleModelSpec | null {

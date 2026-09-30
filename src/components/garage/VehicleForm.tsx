@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 
-import VehicleImageField from '@/components/garage/VehicleImageField'
+import VehicleAssetsField from '@/components/garage/VehicleAssetsField'
 import {
   BODY_STYLES,
   DRIVETRAINS,
@@ -13,6 +13,8 @@ import {
 } from '@/data/vehicleCatalog'
 import { modelForVehicle } from '@/data/vehicleModels'
 import type { VehicleInput } from '@/lib/vehicleTypes'
+
+type FormTab = 'details' | 'assets'
 
 type VehicleFormProps = {
   initial?: Partial<VehicleInput>
@@ -44,6 +46,8 @@ const emptyForm: VehicleInput = {
   titleStatus: '',
   engineType: '',
   imageUrl: '',
+  assets: [],
+  modelAssetId: null,
   tags: [],
 }
 
@@ -63,9 +67,12 @@ export default function VehicleForm({
   onSubmit,
   onCancel,
 }: VehicleFormProps) {
+  const [tab, setTab] = useState<FormTab>('details')
   const [values, setValues] = useState<VehicleInput>({
     ...emptyForm,
     ...initial,
+    assets: initial?.assets ?? [],
+    modelAssetId: initial?.modelAssetId ?? null,
     tags: initial?.tags ?? [],
   })
   const [tagsText, setTagsText] = useState((initial?.tags ?? []).join(', '))
@@ -158,6 +165,19 @@ export default function VehicleForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
+      <div className="-mx-1 flex border-b border-garage-border">
+        <FormTabButton active={tab === 'details'} onClick={() => setTab('details')}>
+          Details
+        </FormTabButton>
+        <FormTabButton active={tab === 'assets'} onClick={() => setTab('assets')}>
+          Assets
+          {values.assets?.length ? (
+            <span className="ml-2 text-garage-muted">{values.assets.length}</span>
+          ) : null}
+        </FormTabButton>
+      </div>
+
+      <div className={tab === 'details' ? 'space-y-8' : 'hidden'}>
       <Section title="Identity" hint="Year, make, and model are required.">
         <div className="grid gap-4 md:grid-cols-3">
           <Field label="Year" required>
@@ -286,7 +306,8 @@ export default function VehicleForm({
             />
           </Field>
         </div>
-        {modelForVehicle({
+        {values.modelAssetId ||
+        modelForVehicle({
           year: values.year,
           make: selectedMake === OTHER ? customMake : values.make,
           model: customModel || values.model,
@@ -296,16 +317,6 @@ export default function VehicleForm({
             This vehicle has a 3D showcase model. Set color to red, white, or a hex code to tint the paint.
           </p>
         ) : null}
-      </Section>
-
-      <Section title="Photo">
-        <VehicleImageField
-          year={values.year}
-          make={selectedMake === OTHER ? customMake : values.make}
-          model={customModel || values.model}
-          value={values.imageUrl ?? ''}
-          onChange={(imageUrl) => setValues({ ...values, imageUrl })}
-        />
       </Section>
 
       <details
@@ -480,6 +491,18 @@ export default function VehicleForm({
           </label>
         </div>
       </Section>
+      </div>
+      <div className={tab === 'assets' ? '' : 'hidden'}>
+        <VehicleAssetsField
+          year={values.year}
+          make={selectedMake === OTHER ? customMake : values.make}
+          model={customModel || values.model}
+          assets={values.assets ?? []}
+          imageUrl={values.imageUrl ?? null}
+          modelAssetId={values.modelAssetId ?? null}
+          onChange={(next) => setValues({ ...values, ...next })}
+        />
+      </div>
 
       {error ? <p className="text-sm text-red-300">{error}</p> : null}
 
@@ -494,6 +517,30 @@ export default function VehicleForm({
         ) : null}
       </div>
     </form>
+  )
+}
+
+function FormTabButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean
+  onClick: () => void
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`border-b-2 px-4 py-3 text-sm ${
+        active
+          ? 'border-garage-accent text-garage-text'
+          : 'border-transparent text-garage-muted hover:text-garage-text'
+      }`}
+    >
+      {children}
+    </button>
   )
 }
 

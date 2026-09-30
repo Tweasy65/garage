@@ -10,11 +10,19 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ServiceRouteImport } from './routes/service'
 import { Route as ApiHealthRouteImport } from './routes/api.health'
+import { Route as VehiclesVehicleIdRouteImport } from './routes/vehicles.$vehicleId'
+import { Route as VehiclesVehicleIdIndexRouteImport } from './routes/vehicles.$vehicleId.index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ServiceRoute = ServiceRouteImport.update({
+  id: '/service',
+  path: '/service',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiHealthRoute = ApiHealthRouteImport.update({
@@ -22,31 +30,62 @@ const ApiHealthRoute = ApiHealthRouteImport.update({
   path: '/api/health',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VehiclesVehicleIdRoute = VehiclesVehicleIdRouteImport.update({
+  id: '/vehicles/$vehicleId',
+  path: '/vehicles/$vehicleId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VehiclesVehicleIdIndexRoute = VehiclesVehicleIdIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => VehiclesVehicleIdRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/service': typeof ServiceRoute
   '/api/health': typeof ApiHealthRoute
+  '/vehicles/$vehicleId': typeof VehiclesVehicleIdRouteWithChildren
+  '/vehicles/$vehicleId/': typeof VehiclesVehicleIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/service': typeof ServiceRoute
   '/api/health': typeof ApiHealthRoute
+  '/vehicles/$vehicleId': typeof VehiclesVehicleIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/service': typeof ServiceRoute
   '/api/health': typeof ApiHealthRoute
+  '/vehicles/$vehicleId': typeof VehiclesVehicleIdRouteWithChildren
+  '/vehicles/$vehicleId/': typeof VehiclesVehicleIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/health'
+  fullPaths:
+    | '/'
+    | '/service'
+    | '/api/health'
+    | '/vehicles/$vehicleId'
+    | '/vehicles/$vehicleId/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/health'
-  id: '__root__' | '/' | '/api/health'
+  to: '/' | '/service' | '/api/health' | '/vehicles/$vehicleId'
+  id:
+    | '__root__'
+    | '/'
+    | '/service'
+    | '/api/health'
+    | '/vehicles/$vehicleId'
+    | '/vehicles/$vehicleId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ServiceRoute: typeof ServiceRoute
   ApiHealthRoute: typeof ApiHealthRoute
+  VehiclesVehicleIdRoute: typeof VehiclesVehicleIdRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -58,6 +97,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/service': {
+      id: '/service'
+      path: '/service'
+      fullPath: '/service'
+      preLoaderRoute: typeof ServiceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/health': {
       id: '/api/health'
       path: '/api/health'
@@ -65,12 +111,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiHealthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/vehicles/$vehicleId': {
+      id: '/vehicles/$vehicleId'
+      path: '/vehicles/$vehicleId'
+      fullPath: '/vehicles/$vehicleId'
+      preLoaderRoute: typeof VehiclesVehicleIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/vehicles/$vehicleId/': {
+      id: '/vehicles/$vehicleId/'
+      path: '/'
+      fullPath: '/vehicles/$vehicleId/'
+      preLoaderRoute: typeof VehiclesVehicleIdIndexRouteImport
+      parentRoute: typeof VehiclesVehicleIdRoute
+    }
   }
 }
 
+interface VehiclesVehicleIdRouteChildren {
+  VehiclesVehicleIdIndexRoute: typeof VehiclesVehicleIdIndexRoute
+}
+
+const VehiclesVehicleIdRouteChildren: VehiclesVehicleIdRouteChildren = {
+  VehiclesVehicleIdIndexRoute: VehiclesVehicleIdIndexRoute,
+}
+
+const VehiclesVehicleIdRouteWithChildren =
+  VehiclesVehicleIdRoute._addFileChildren(VehiclesVehicleIdRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ServiceRoute: ServiceRoute,
   ApiHealthRoute: ApiHealthRoute,
+  VehiclesVehicleIdRoute: VehiclesVehicleIdRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

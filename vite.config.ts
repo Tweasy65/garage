@@ -49,6 +49,18 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url)),
+        scheduler: fileURLToPath(
+          new URL('./src/shims/scheduler.ts', import.meta.url),
+        ),
+        'scheduler/index.js': fileURLToPath(
+          new URL('./src/shims/scheduler.ts', import.meta.url),
+        ),
+        'stats.js': fileURLToPath(
+          new URL('./src/shims/stats.ts', import.meta.url),
+        ),
+        'stats.js/build/stats.min.js': fileURLToPath(
+          new URL('./src/shims/stats.ts', import.meta.url),
+        ),
         'use-sync-external-store/shim/with-selector.js': fileURLToPath(
           new URL(
             './src/shims/use-sync-external-store-with-selector.ts',
@@ -62,7 +74,12 @@ export default defineConfig(({ mode }) => {
           ),
         ),
       },
-      dedupe: ['@clerk/react', 'react', 'react-dom'],
+      dedupe: ['@clerk/react', 'react', 'react-dom', 'scheduler'],
+    },
+    server: {
+      port: 3089,
+      strictPort: true,
+      host: '0.0.0.0',
     },
     assetsInclude: ['**/*.glb'],
     optimizeDeps: {
@@ -73,6 +90,8 @@ export default defineConfig(({ mode }) => {
         '@react-three/fiber',
         '@react-three/drei',
         '@cloudflare/unenv-preset/node/process',
+        'scheduler',
+        'stats.js',
         'use-sync-external-store',
         'use-sync-external-store/shim/with-selector',
       ],
@@ -84,6 +103,7 @@ export default defineConfig(({ mode }) => {
           '@react-three/fiber',
           '@react-three/drei',
           '@cloudflare/unenv-preset/node/process',
+          'scheduler',
         ],
       },
     },
