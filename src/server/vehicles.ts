@@ -313,6 +313,24 @@ export const createVehicle = createServerFn({ method: 'POST' })
     return { vehicle: mapVehicleDetail(row, []) }
   })
 
+async function loadVehicleDetailForUser(vehicleId: string, userId: string) {
+  const [row] = await db
+    .select()
+    .from(vehicles)
+    .where(and(eq(vehicles.id, vehicleId), eq(vehicles.userId, userId)))
+    .limit(1)
+
+  if (!row) throw new Error('Vehicle not found')
+
+  const maintenance = await db
+    .select()
+    .from(maintenanceRecords)
+    .where(eq(maintenanceRecords.vehicleId, row.id))
+    .orderBy(desc(maintenanceRecords.date))
+
+  return mapVehicleDetail(row, maintenance.map(mapMaintenance))
+}
+
 export const updateVehicle = createServerFn({ method: 'POST' })
   .inputValidator((data: VehicleInput & { id: string }) => data)
   .handler(async ({ data }) => {
@@ -327,13 +345,28 @@ export const updateVehicle = createServerFn({ method: 'POST' })
 
     if (!row) throw new Error('Vehicle not found')
 
-    const maintenance = await db
-      .select()
-      .from(maintenanceRecords)
-      .where(eq(maintenanceRecords.vehicleId, row.id))
-      .orderBy(desc(maintenanceRecords.date))
+    return { vehicle: await loadVehicleDetailForUser(row.id, userId) }
+  })
 
-    return { vehicle: mapVehicleDetail(row, maintenance.map(mapMaintenance)) }
+export const updateVehicleMileage = createServerFn({ method: 'POST' })
+  .inputValidator((data: { id: string; mileage: number }) => {
+    if (!Number.isFinite(data.mileage) || data.mileage < 0) {
+      throw new Error('Enter a valid odometer reading')
+    }
+    return { id: data.id, mileage: Math.round(data.mileage) }
+  })
+  .handler(async ({ data }) => {
+    const userId = await requireUserId()
+
+    const [row] = await db
+      .update(vehicles)
+      .set({ mileage: data.mileage, updatedAt: new Date() })
+      .where(and(eq(vehicles.id, data.id), eq(vehicles.userId, userId)))
+      .returning({ id: vehicles.id })
+
+    if (!row) throw new Error('Vehicle not found')
+
+    return { vehicle: await loadVehicleDetailForUser(row.id, userId) }
   })
 
 export const deleteVehicle = createServerFn({ method: 'POST' })
