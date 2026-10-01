@@ -33,10 +33,20 @@ For local dev, copy `.env.example` → `.env.local` and `.dev.vars.example` → 
 ## Deploy
 
 ```bash
+pnpm run predeploy:check
 pnpm run deploy
 ```
 
 The Worker is routed at `garage.bartonhome.dev` via `wrangler.jsonc`.
+
+### Predeploy checklist
+
+Run `pnpm run predeploy:check` locally (TypeScript, wrangler route, migrations when `DATABASE_URL` is set). Before the first successful deploy:
+
+1. GitHub repo secrets: `CLOUDFLARE_API_TOKEN`, `VITE_CLERK_PUBLISHABLE_KEY` (optional `CLOUDFLARE_ACCOUNT_ID`).
+2. Worker secrets on the `garage` Worker: `DATABASE_URL`, `CLERK_SECRET_KEY`.
+3. Neon: `pnpm db:migrate` against production (includes `0001_vehicle_assets`).
+4. Clerk dashboard: allow `https://garage.bartonhome.dev` for sign-in.
 
 ## CI
 

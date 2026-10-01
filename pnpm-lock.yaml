@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@clerk/react':
+        specifier: 6.15.2
+        version: 6.15.2(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@clerk/tanstack-react-start':
         specifier: ^1.0.6
         version: 1.5.13(@tanstack/react-router@1.170.36(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(@tanstack/react-start@1.168.54(esbuild@0.28.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(rollup@4.63.2)(vite@7.3.6(@types/node@22.20.2)(jiti@2.7.0)(lightningcss@1.33.0)(tsx@4.23.13)))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -81,6 +84,9 @@ importers:
       pg:
         specifier: ^8.20.0
         version: 8.23.0
+      three-stdlib:
+        specifier: 2.36.1
+        version: 2.36.1(three@0.186.1)
       typescript:
         specifier: ^5.7.2
         version: 5.9.3
