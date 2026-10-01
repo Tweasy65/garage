@@ -2,6 +2,7 @@ import { useAuth } from '@clerk/tanstack-react-start'
 import { Link } from '@tanstack/react-router'
 import { CarFront, Plus } from 'lucide-react'
 
+import GarageAlertsMenu from '@/components/garage/GarageAlertsMenu'
 import HeaderUser from '@/integrations/clerk/header-user'
 
 export default function Header() {
@@ -58,6 +59,7 @@ export default function Header() {
               <span className="hidden sm:inline">Add vehicle</span>
             </Link>
           ) : null}
+          {userId ? <GarageAlertsMenu /> : null}
           <HeaderUser />
         </div>
       </div>

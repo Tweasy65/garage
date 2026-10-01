@@ -2,11 +2,12 @@ import { Link, useRouter } from '@tanstack/react-router'
 import { CheckCircle2, Plus, Star } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
-import CollectionCarousel from '@/components/garage/CollectionCarousel'
-import Modal from '@/components/garage/Modal'
+import Drawer from '@/components/garage/Drawer'
+import { useGarageAlerts } from '@/components/garage/garageAlertsContext'
 import PageShell from '@/components/garage/PageShell'
 import VehicleForm from '@/components/garage/VehicleForm'
 import VehicleModelCanvas from '@/components/garage/VehicleModelCanvas'
+import VehiclePreview from '@/components/garage/VehiclePreview'
 import VehicleThumb from '@/components/garage/VehicleThumb'
 import { FEATURED_MODEL, paintColorFromName } from '@/data/vehicleModels'
 import { formatMiles } from '@/lib/format'
@@ -30,10 +31,11 @@ export default function CollectionPage({
   onCloseAdd,
 }: CollectionPageProps) {
   const router = useRouter()
+  const { refreshAlerts } = useGarageAlerts()
   const [selectedId, setSelectedId] = useState<string | null>(
     vehicles[0]?.id ?? null,
   )
-  const [selectedDetail, setSelectedDetail] = useState<VehicleDetail | null>(null)
+  const [details, setDetails] = useState<Record<string, VehicleDetail | 'failed'>>({})
 
   useEffect(() => {
     if (selectedId && vehicles.some((vehicle) => vehicle.id === selectedId)) return
@@ -41,26 +43,21 @@ export default function CollectionPage({
   }, [selectedId, vehicles])
 
   useEffect(() => {
-    if (!selectedId) {
-      setSelectedDetail(null)
-      return
-    }
-    let cancelled = false
-    void getVehicle({ data: { id: selectedId } })
+    if (!selectedId || details[selectedId]) return
+    const id = selectedId
+    void getVehicle({ data: { id } })
       .then(({ vehicle }) => {
-        if (!cancelled) setSelectedDetail(vehicle)
+        setDetails((prev) => ({ ...prev, [id]: vehicle }))
       })
       .catch(() => {
-        if (!cancelled) setSelectedDetail(null)
+        setDetails((prev) => ({ ...prev, [id]: 'failed' }))
       })
-    return () => {
-      cancelled = true
-    }
-  }, [selectedId])
+  }, [selectedId, details])
 
   async function handleCreate(values: VehicleInput) {
     const { vehicle } = await createVehicle({ data: values })
     await router.invalidate()
+    await refreshAlerts()
     await router.navigate({
       to: '/vehicles/$vehicleId',
       params: { vehicleId: vehicle.id },
@@ -80,59 +77,77 @@ export default function CollectionPage({
     )
   }
 
+  const selectedSummary =
+    vehicles.find((vehicle) => vehicle.id === selectedId) ?? vehicles[0] ?? null
+  const selectedDetail = selectedSummary ? details[selectedSummary.id] : undefined
+  const previewVehicle =
+    selectedDetail && selectedDetail !== 'failed' ? selectedDetail : selectedSummary
+  const previewPending = selectedSummary != null && selectedDetail == null
+
   return (
     <PageShell>
-      <CollectionCarousel
-        vehicles={vehicles}
-        selectedId={selectedId}
-        selectedDetail={selectedDetail}
-        onSelect={setSelectedId}
-      />
       <ServiceSummary alerts={alerts} />
-      <section className="garage-panel">
-        <div className="flex items-center justify-between border-b border-garage-border p-4">
-          <div>
-            <p className="label-caps">Inventory</p>
-            <h2 className="mt-1 font-semibold">
-              {vehicles.length} vehicle{vehicles.length === 1 ? '' : 's'}
-            </h2>
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] lg:items-start">
+        <section className="garage-panel order-2 flex flex-col overflow-hidden lg:order-1 lg:max-h-[calc(100vh-8rem)]">
+          <div className="flex items-center justify-between border-b border-garage-border p-4">
+            <div>
+              <p className="label-caps">Inventory</p>
+              <h2 className="mt-1 font-semibold">
+                {vehicles.length} vehicle{vehicles.length === 1 ? '' : 's'}
+              </h2>
+            </div>
+            <button type="button" onClick={onOpenAdd} className="btn">
+              <Plus className="size-4" />
+              Add vehicle
+            </button>
           </div>
-          <button type="button" onClick={onOpenAdd} className="btn">
-            <Plus className="size-4" />
-            Add vehicle
-          </button>
-        </div>
-        <div className="grid gap-px bg-garage-border sm:grid-cols-2 lg:grid-cols-3">
-          {vehicles.map((vehicle) => (
-            <Link
-              key={vehicle.id}
-              to="/vehicles/$vehicleId"
-              params={{ vehicleId: vehicle.id }}
-              className="flex items-center gap-3 bg-garage-panel p-4 transition hover:bg-white/5"
-            >
-              <VehicleThumb
-                src={vehicle.imageUrl}
-                alt=""
-                className="size-14 shrink-0 rounded-sm"
-              />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="truncate font-medium">
-                    {vehicle.year} {vehicle.make} {vehicle.model}
-                  </p>
-                  {vehicle.isFavorite ? (
-                    <Star className="size-3 fill-garage-accent text-garage-accent" />
-                  ) : null}
-                </div>
-                <p className="truncate text-sm text-garage-muted">
-                  {formatMiles(vehicle.mileage)}
-                  {vehicle.isProject ? ' · Project' : ''}
-                </p>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </section>
+          <ul className="divide-y divide-garage-border overflow-y-auto">
+            {vehicles.map((vehicle) => {
+              const active = vehicle.id === selectedSummary?.id
+              return (
+                <li key={vehicle.id}>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedId(vehicle.id)}
+                    aria-pressed={active}
+                    className={`flex w-full items-center gap-3 border-l-2 p-3 text-left transition ${
+                      active
+                        ? 'border-garage-accent bg-white/5'
+                        : 'border-transparent hover:bg-white/5'
+                    }`}
+                  >
+                    <VehicleThumb
+                      src={vehicle.imageUrl}
+                      alt=""
+                      className="size-14 shrink-0 rounded-sm"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="truncate font-medium">
+                          {vehicle.year} {vehicle.make} {vehicle.model}
+                        </p>
+                        {vehicle.isFavorite ? (
+                          <Star className="size-3 shrink-0 fill-garage-accent text-garage-accent" />
+                        ) : null}
+                      </div>
+                      <p className="truncate text-sm text-garage-muted">
+                        {formatMiles(vehicle.mileage)}
+                        {vehicle.color ? ` · ${vehicle.color}` : ''}
+                        {vehicle.isProject ? ' · Project' : ''}
+                      </p>
+                    </div>
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        </section>
+        <VehiclePreview
+          vehicle={previewVehicle}
+          pending={previewPending}
+          className="order-1 lg:sticky lg:top-4 lg:order-2"
+        />
+      </div>
       <AddVehicleModal
         open={addOpen}
         onClose={onCloseAdd}
@@ -179,19 +194,15 @@ function AddVehicleModal({
   onSubmit: (values: VehicleInput) => Promise<void>
 }) {
   return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      size="lg"
-      hint="New vehicle"
-      title="Add to garage"
-    >
+    <Drawer open={open} onClose={onClose} hint="New vehicle" title="Add to garage">
       <VehicleForm
+        open={open}
+        entityId={open ? 'new-vehicle' : 'closed'}
         submitLabel="Add vehicle"
         onSubmit={onSubmit}
         onCancel={onClose}
       />
-    </Modal>
+    </Drawer>
   )
 }
 

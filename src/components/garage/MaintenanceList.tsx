@@ -1,21 +1,25 @@
-import { Wrench } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
+import { useState } from 'react'
 
+import MaintenanceRecordDrawer, {
+  type ListedMaintenanceRecord,
+} from '@/components/garage/MaintenanceRecordDrawer'
 import { formatDate, formatMiles, formatMoney } from '@/lib/format'
-import type { MaintenanceRecord } from '@/lib/vehicleTypes'
-
-type ListedRecord = MaintenanceRecord & {
-  vehicleLabel?: string
-}
+import type { MaintenanceInput } from '@/lib/vehicleTypes'
 
 export default function MaintenanceList({
   records,
   showVehicle,
   onDelete,
+  onUpdate,
 }: {
-  records: ListedRecord[]
+  records: ListedMaintenanceRecord[]
   showVehicle?: boolean
   onDelete: (id: string) => void
+  onUpdate: (id: string, values: MaintenanceInput) => Promise<void>
 }) {
+  const [selected, setSelected] = useState<ListedMaintenanceRecord | null>(null)
+
   if (records.length === 0) {
     return (
       <p className="text-sm text-garage-muted">
@@ -25,54 +29,70 @@ export default function MaintenanceList({
   }
 
   return (
-    <div className="space-y-2">
-      {records.map((record) => (
-        <div
-          key={record.id}
-          className="flex items-start justify-between gap-4 rounded-sm border border-garage-border bg-garage-panel-2/40 px-4 py-3"
-        >
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <Wrench className="size-4 shrink-0 text-garage-muted" />
-              <p className="font-medium">{record.type}</p>
-            </div>
-            {showVehicle && record.vehicleLabel ? (
-              <p className="mt-1 text-sm text-garage-muted">{record.vehicleLabel}</p>
-            ) : null}
-            <p className="mt-1 text-sm text-garage-muted">
-              {formatDate(record.date)}
-              {record.mileage != null ? ` · ${formatMiles(record.mileage)}` : ''}
-              {formatMoney(record.costCents)
-                ? ` · ${formatMoney(record.costCents)}`
-                : ''}
-            </p>
-            {record.serviceProvider ? (
-              <p className="mt-1 text-sm text-garage-muted">
-                {record.serviceProvider}
-              </p>
-            ) : null}
-            {record.nextDueDate || record.nextDueMileage != null ? (
-              <p className="mt-1 text-xs text-garage-muted">
-                Next due
-                {record.nextDueDate ? ` ${formatDate(record.nextDueDate)}` : ''}
-                {record.nextDueMileage != null
-                  ? ` · ${formatMiles(record.nextDueMileage)}`
-                  : ''}
-              </p>
-            ) : null}
-            {record.description ? (
-              <p className="mt-2 text-sm text-garage-muted">{record.description}</p>
-            ) : null}
-          </div>
-          <button
-            type="button"
-            onClick={() => onDelete(record.id)}
-            className="shrink-0 text-sm text-garage-muted hover:text-red-300"
-          >
-            Remove
-          </button>
-        </div>
-      ))}
-    </div>
+    <>
+      <div className="service-table-wrap overflow-x-auto rounded-sm border border-garage-border">
+        <table className="service-table">
+          <thead>
+            <tr>
+              <th scope="col">Date</th>
+              <th scope="col">Service</th>
+              {showVehicle ? <th scope="col">Vehicle</th> : null}
+              <th scope="col" className="hidden sm:table-cell">
+                Miles
+              </th>
+              <th scope="col" className="hidden md:table-cell">
+                Cost
+              </th>
+              <th scope="col" className="w-8">
+                <span className="sr-only">View</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {records.map((record) => (
+              <tr
+                key={record.id}
+                className="cursor-pointer"
+                tabIndex={0}
+                onClick={() => setSelected(record)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault()
+                    setSelected(record)
+                  }
+                }}
+              >
+                <td className="tabular-nums text-garage-muted">
+                  {formatDate(record.date)}
+                </td>
+                <td className="font-medium">{record.type}</td>
+                {showVehicle ? (
+                  <td className="max-w-[10rem] truncate text-garage-muted">
+                    {record.vehicleLabel ?? '—'}
+                  </td>
+                ) : null}
+                <td className="hidden tabular-nums sm:table-cell">
+                  {record.mileage != null ? formatMiles(record.mileage) : '—'}
+                </td>
+                <td className="hidden tabular-nums md:table-cell">
+                  {formatMoney(record.costCents) || '—'}
+                </td>
+                <td className="text-garage-muted">
+                  <ChevronRight className="size-4" aria-hidden />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <MaintenanceRecordDrawer
+        record={selected}
+        open={selected != null}
+        onClose={() => setSelected(null)}
+        onDelete={onDelete}
+        onUpdate={onUpdate}
+      />
+    </>
   )
 }

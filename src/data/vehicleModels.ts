@@ -26,6 +26,50 @@ export const VEHICLE_MODELS: VehicleModelSpec[] = [
     doorL: 'Paint_Door_L',
     doorR: 'Paint_Door_R',
   },
+  {
+    id: '2009-ford-f150',
+    year: 2009,
+    make: 'Ford',
+    model: 'F-150',
+    src: '/models/2009-ford-f150.glb',
+    hood: 'Paint_Hood',
+    trunk: 'Paint_Trunk',
+    doorL: 'Paint_Door_L',
+    doorR: 'Paint_Door_R',
+  },
+  {
+    id: '2010-ford-f250-super-duty',
+    year: 2010,
+    make: 'Ford',
+    model: 'F-250',
+    src: '/models/2010-ford-f250-super-duty.glb',
+    hood: 'Paint_Hood',
+    trunk: 'Paint_Trunk',
+    doorL: 'Paint_Door_L',
+    doorR: 'Paint_Door_R',
+  },
+  {
+    id: '1995-jeep-cherokee-xj',
+    year: 1995,
+    make: 'Jeep',
+    model: 'Cherokee',
+    src: '/models/1995-jeep-cherokee-xj.glb',
+    hood: 'Paint_Hood',
+    trunk: 'Paint_Trunk',
+    doorL: 'Paint_Door_L',
+    doorR: 'Paint_Door_R',
+  },
+  {
+    id: '2022-kia-telluride',
+    year: 2022,
+    make: 'Kia',
+    model: 'Telluride',
+    src: '/models/2022-kia-telluride.glb',
+    hood: 'Paint_Hood',
+    trunk: 'Paint_Trunk',
+    doorL: 'Paint_Door_L',
+    doorR: 'Paint_Door_R',
+  },
 ]
 
 const NAMED_COLORS: Record<string, string> = {
@@ -99,6 +143,22 @@ export function modelForVehicle(vehicle: VehicleMatch): VehicleModelSpec | null 
       return true
     }) ?? null
   )
+}
+
+export function catalogModelLabel(spec: VehicleModelSpec): string {
+  const body = spec.bodyStyle ? ` ${spec.bodyStyle}` : ''
+  return `${spec.year} ${spec.make} ${spec.model}${body}`
+}
+
+export function catalogModelToAsset(spec: VehicleModelSpec): VehicleAsset {
+  return {
+    id: spec.id,
+    kind: 'model',
+    name: catalogModelLabel(spec),
+    mime: 'model/gltf-binary',
+    src: spec.src,
+    createdAt: new Date().toISOString(),
+  }
 }
 
 export function paintColorFromName(value?: string | null): string | null {

@@ -83,6 +83,55 @@ export const addMaintenanceRecord = createServerFn({ method: 'POST' })
     }
   })
 
+export const updateMaintenanceRecord = createServerFn({ method: 'POST' })
+  .inputValidator((data: MaintenanceInput & { id: string }) => data)
+  .handler(async ({ data }) => {
+    const userId = await requireUserId()
+    const values = normalizeMaintenanceInput(data)
+    const vehicle = await assertVehicleOwner(values.vehicleId, userId)
+
+    const [row] = await db
+      .update(maintenanceRecords)
+      .set(values)
+      .where(
+        and(
+          eq(maintenanceRecords.id, data.id),
+          eq(maintenanceRecords.userId, userId),
+        ),
+      )
+      .returning()
+
+    if (!row) throw new Error('Maintenance record not found')
+
+    const nextMileage =
+      values.mileage != null && values.mileage > vehicle.mileage
+        ? values.mileage
+        : undefined
+
+    await db
+      .update(vehicles)
+      .set({
+        updatedAt: new Date(),
+        ...(nextMileage != null ? { mileage: nextMileage } : {}),
+      })
+      .where(eq(vehicles.id, values.vehicleId))
+
+    return {
+      record: {
+        id: row.id,
+        vehicleId: row.vehicleId,
+        date: row.date.toISOString(),
+        type: row.type,
+        description: row.description,
+        costCents: row.costCents,
+        mileage: row.mileage,
+        serviceProvider: row.serviceProvider,
+        nextDueDate: row.nextDueDate?.toISOString() ?? null,
+        nextDueMileage: row.nextDueMileage,
+      },
+    }
+  })
+
 export const deleteMaintenanceRecord = createServerFn({ method: 'POST' })
   .inputValidator((data: { id: string }) => data)
   .handler(async ({ data }) => {

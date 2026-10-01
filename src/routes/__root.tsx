@@ -6,6 +6,7 @@ import {
 } from '@tanstack/react-router'
 
 import Header from '@/components/Header'
+import { GarageAlertsProvider } from '@/components/garage/garageAlertsContext'
 import ClerkProvider from '@/integrations/clerk/provider'
 
 import appCss from '../styles.css?url'
@@ -46,8 +47,10 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <ClerkProvider>
-          <Header />
-          {children}
+          <GarageAlertsProvider>
+            <Header />
+            {children}
+          </GarageAlertsProvider>
         </ClerkProvider>
         <Scripts />
       </body>

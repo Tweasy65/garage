@@ -3,7 +3,7 @@ import { ContactShadows } from '@react-three/drei/core/ContactShadows'
 import { Environment } from '@react-three/drei/core/Environment'
 import { Lightformer } from '@react-three/drei/core/Lightformer'
 import { OrbitControls } from '@react-three/drei/core/OrbitControls'
-import { Canvas, useLoader } from '@react-three/fiber'
+import { Canvas, useLoader, useThree } from '@react-three/fiber'
 import { Loader2, Moon, Sun, ZoomIn, ZoomOut } from 'lucide-react'
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import type { Group, Mesh, MeshStandardMaterial } from 'three'
@@ -29,11 +29,13 @@ export type VehicleModelPose = {
 export type StudioTheme = 'dark' | 'light'
 
 type VehicleModelViewerProps = {
-  spec: VehicleModelSpec
+  spec: VehicleModelSpec | null
   color?: string | null
   autoRotate?: boolean
   pose?: VehicleModelPose
   className?: string
+  showControls?: boolean
+  onCaptureReady?: (capture: (() => string) | null) => void
 }
 
 const MIN_DISTANCE = 3.4
@@ -327,6 +329,31 @@ function LoadingSignal({ onChange }: { onChange: (loading: boolean) => void }) {
   return null
 }
 
+function CaptureRegistrar({
+  active,
+  onCaptureReady,
+}: {
+  active: boolean
+  onCaptureReady?: (capture: (() => string) | null) => void
+}) {
+  const { gl, scene, camera } = useThree()
+
+  useEffect(() => {
+    if (!onCaptureReady) return
+    if (!active) {
+      onCaptureReady(null)
+      return
+    }
+    onCaptureReady(() => {
+      gl.render(scene, camera)
+      return gl.domElement.toDataURL('image/jpeg', 0.92)
+    })
+    return () => onCaptureReady(null)
+  }, [active, camera, gl, onCaptureReady, scene])
+
+  return null
+}
+
 function LoadingOverlay({ progress }: { progress: number | null }) {
   const percent = progress == null ? null : Math.round(progress * 100)
   return (
@@ -353,6 +380,8 @@ export default function VehicleModelViewer({
   autoRotate = true,
   pose = {},
   className,
+  showControls = true,
+  onCaptureReady,
 }: VehicleModelViewerProps) {
   const controlsRef = useRef<OrbitControlsImpl>(null)
   const [theme, setTheme] = useStudioTheme()
@@ -362,7 +391,7 @@ export default function VehicleModelViewer({
 
   useEffect(() => {
     setProgress(null)
-  }, [spec.src])
+  }, [spec?.src])
 
   function handleProgress(event: ProgressEvent) {
     if (event.lengthComputable && event.total > 0) setProgress(event.loaded / event.total)
@@ -375,6 +404,8 @@ export default function VehicleModelViewer({
     else controls.dollyIn(ZOOM_STEP)
     controls.update()
   }
+
+  const captureActive = Boolean(spec) && !loading
 
   return (
     <div
@@ -389,11 +420,13 @@ export default function VehicleModelViewer({
         style={{ display: 'block', width: '100%', height: '100%' }}
       >
         <Studio tokens={tokens} />
-        <Suspense fallback={<LoadingSignal onChange={setLoading} />}>
-          <group position={[0, -0.7, 0]}>
-            <Model spec={spec} color={color} pose={pose} onProgress={handleProgress} />
-          </group>
-        </Suspense>
+        {spec ? (
+          <Suspense fallback={<LoadingSignal onChange={setLoading} />}>
+            <group position={[0, -0.7, 0]}>
+              <Model spec={spec} color={color} pose={pose} onProgress={handleProgress} />
+            </group>
+          </Suspense>
+        ) : null}
         <ContactShadows
           position={[0, -0.69, 0]}
           opacity={tokens.shadow}
@@ -412,8 +445,10 @@ export default function VehicleModelViewer({
           maxPolarAngle={Math.PI / 2.08}
           target={[0, 0.32, 0]}
         />
+        <CaptureRegistrar active={captureActive} onCaptureReady={onCaptureReady} />
       </Canvas>
-      {loading && <LoadingOverlay progress={progress} />}
+      {(loading || !spec) && <LoadingOverlay progress={spec ? progress : null} />}
+      {showControls ? (
       <div className="absolute bottom-3 right-3 flex gap-2">
         <button
           type="button"
@@ -442,6 +477,7 @@ export default function VehicleModelViewer({
           </button>
         </div>
       </div>
+      ) : null}
     </div>
   )
 }

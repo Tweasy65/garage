@@ -2,6 +2,13 @@ import { Box, Image, Search, Star, Upload, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
 import type { StockImage, VehicleAsset } from '@/lib/vehicleTypes'
+import {
+  VEHICLE_MODELS,
+  catalogModelLabel,
+  catalogModelToAsset,
+  modelForVehicle,
+  type VehicleModelSpec,
+} from '@/data/vehicleModels'
 import { searchStockImages } from '@/server/images'
 
 const MAX_IMAGES = 12
@@ -12,6 +19,7 @@ type VehicleAssetsFieldProps = {
   year: number
   make: string
   model: string
+  bodyStyle?: string | null
   assets: VehicleAsset[]
   imageUrl: string | null
   modelAssetId: string | null
@@ -64,6 +72,7 @@ export default function VehicleAssetsField({
   year,
   make,
   model,
+  bodyStyle,
   assets,
   imageUrl,
   modelAssetId,
@@ -77,6 +86,19 @@ export default function VehicleAssetsField({
 
   const images = assets.filter((asset) => asset.kind === 'image')
   const models = assets.filter((asset) => asset.kind === 'model')
+  const vehicleMatch = { year, make, model, bodyStyle: bodyStyle ?? null }
+  const matchedCatalog = modelForVehicle(vehicleMatch)
+
+  function attachCatalogModel(spec: VehicleModelSpec) {
+    const existing = assets.find((asset) => asset.id === spec.id && asset.kind === 'model')
+    if (!existing && models.length >= MAX_MODELS) {
+      setError(`You can add up to ${MAX_MODELS} 3D models.`)
+      return
+    }
+    const nextAssets = existing ? assets : [...assets, catalogModelToAsset(spec)]
+    emit(nextAssets, imageUrl, spec.id)
+    setError(null)
+  }
 
   useEffect(() => {
     setQuery(suggested)
@@ -300,60 +322,126 @@ export default function VehicleAssetsField({
         <div>
           <p className="label-caps">3D models</p>
           <p className="mt-1 text-sm text-garage-muted">
-            Upload a .glb or .gltf to use in the showcase viewer. One model can be active at a time.
+            Pick a built-in garage model, upload your own .glb/.gltf, or choose which model powers the viewer.
           </p>
         </div>
 
-        {models.length > 0 ? (
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-garage-muted">Garage library</p>
           <ul className="space-y-2">
-            {models.map((asset) => {
-              const active = modelAssetId === asset.id
+            {VEHICLE_MODELS.map((spec) => {
+              const attached = assets.some(
+                (asset) => asset.id === spec.id && asset.kind === 'model',
+              )
+              const active = modelAssetId === spec.id
+              const matchesVehicle = matchedCatalog?.id === spec.id
               return (
                 <li
-                  key={asset.id}
+                  key={spec.id}
                   className={`flex items-center justify-between gap-3 border px-3 py-2 ${
                     active ? 'border-garage-accent bg-white/5' : 'border-garage-border'
                   }`}
                 >
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">{asset.name}</p>
+                    <p className="truncate text-sm font-medium">{catalogModelLabel(spec)}</p>
                     <p className="text-xs text-garage-muted">
-                      {active ? 'Used in viewer' : asset.mime || '3D model'}
+                      Built-in · {spec.src.replace(/^\/models\//, '')}
+                      {matchesVehicle ? ' · Matches this vehicle' : null}
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
                     {active ? (
                       <span className="badge">Viewer</span>
+                    ) : attached ? (
+                      <button
+                        type="button"
+                        className="text-xs text-garage-muted hover:text-garage-text"
+                        onClick={() => emit(assets, imageUrl, spec.id)}
+                      >
+                        Use in viewer
+                      </button>
                     ) : (
                       <button
                         type="button"
                         className="text-xs text-garage-muted hover:text-garage-text"
-                        onClick={() => emit(assets, imageUrl, asset.id)}
+                        onClick={() => attachCatalogModel(spec)}
                       >
-                        Use in viewer
+                        Add to vehicle
                       </button>
                     )}
-                    <button
-                      type="button"
-                      className="text-garage-muted hover:text-garage-text"
-                      aria-label="Remove model"
-                      onClick={() => emit(assets.filter((item) => item.id !== asset.id))}
-                    >
-                      <X className="size-3.5" />
-                    </button>
+                    {attached ? (
+                      <button
+                        type="button"
+                        className="text-garage-muted hover:text-garage-text"
+                        aria-label="Remove from vehicle"
+                        onClick={() => emit(assets.filter((item) => item.id !== spec.id))}
+                      >
+                        <X className="size-3.5" />
+                      </button>
+                    ) : null}
                   </div>
                 </li>
               )
             })}
           </ul>
-        ) : (
+        </div>
+
+        {models.filter((asset) => !VEHICLE_MODELS.some((spec) => spec.id === asset.id)).length >
+        0 ? (
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-garage-muted">Your uploads</p>
+            <ul className="space-y-2">
+              {models
+                .filter((asset) => !VEHICLE_MODELS.some((spec) => spec.id === asset.id))
+                .map((asset) => {
+                  const active = modelAssetId === asset.id
+                  return (
+                    <li
+                      key={asset.id}
+                      className={`flex items-center justify-between gap-3 border px-3 py-2 ${
+                        active ? 'border-garage-accent bg-white/5' : 'border-garage-border'
+                      }`}
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium">{asset.name}</p>
+                        <p className="text-xs text-garage-muted">
+                          {active ? 'Used in viewer' : asset.mime || 'Upload'}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-2">
+                        {active ? (
+                          <span className="badge">Viewer</span>
+                        ) : (
+                          <button
+                            type="button"
+                            className="text-xs text-garage-muted hover:text-garage-text"
+                            onClick={() => emit(assets, imageUrl, asset.id)}
+                          >
+                            Use in viewer
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          className="text-garage-muted hover:text-garage-text"
+                          aria-label="Remove model"
+                          onClick={() => emit(assets.filter((item) => item.id !== asset.id))}
+                        >
+                          <X className="size-3.5" />
+                        </button>
+                      </div>
+                    </li>
+                  )
+                })}
+            </ul>
+          </div>
+        ) : models.length === 0 ? (
           <div className="flex h-20 items-center justify-center rounded-sm border border-dashed border-garage-border text-sm text-garage-muted">
             <span className="inline-flex items-center gap-2">
               <Box className="size-4" />
-              No 3D models yet
+              No custom uploads yet
             </span>
           </div>
-        )}
+        ) : null}
 
         <label className="btn w-fit cursor-pointer">
           <Upload className="size-4" />

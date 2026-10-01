@@ -3,6 +3,7 @@ import { Pencil } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
 import Modal from '@/components/garage/Modal'
+import { useGarageAlerts } from '@/components/garage/garageAlertsContext'
 import VehicleModelCanvas from '@/components/garage/VehicleModelCanvas'
 import VehicleThumb from '@/components/garage/VehicleThumb'
 import { paintColorFromName, specForVehicle } from '@/data/vehicleModels'
@@ -11,9 +12,18 @@ import { formatMiles } from '@/lib/format'
 import type { VehicleDetail } from '@/lib/vehicleTypes'
 import { updateVehicleMileage } from '@/server/vehicles'
 
-export default function VehicleHero({ vehicle }: { vehicle: VehicleDetail }) {
+export default function VehicleHero({
+  vehicle,
+  onEdit,
+  onLogService,
+}: {
+  vehicle: VehicleDetail
+  onEdit?: () => void
+  onLogService?: () => void
+}) {
   const spec = specForVehicle(vehicle)
   const router = useRouter()
+  const { refreshAlerts } = useGarageAlerts()
   const [mileageOpen, setMileageOpen] = useState(false)
   const [mileageValue, setMileageValue] = useState(String(vehicle.mileage))
   const [mileageError, setMileageError] = useState<string | null>(null)
@@ -74,6 +84,7 @@ export default function VehicleHero({ vehicle }: { vehicle: VehicleDetail }) {
     try {
       await updateVehicleMileage({ data: { id: vehicle.id, mileage: next } })
       await router.invalidate()
+      await refreshAlerts()
       setMileageOpen(false)
     } catch (err) {
       setMileageError(err instanceof Error ? err.message : 'Could not update mileage')
@@ -101,31 +112,51 @@ export default function VehicleHero({ vehicle }: { vehicle: VehicleDetail }) {
             />
           )}
           <div className="flex flex-col justify-between gap-6 p-6 md:p-8">
-            <div>
-              <p className="label-caps">{vehicle.bodyStyle || 'Vehicle'}</p>
-              <h1 className="mt-2 text-3xl font-semibold tracking-tight md:text-4xl">
-                {vehicle.year} {vehicle.make} {vehicle.model}
-              </h1>
-              {vehicle.trim ? (
-                <p className="mt-1 text-garage-muted">{vehicle.trim}</p>
-              ) : null}
-              <div className="mt-4 flex flex-wrap items-center gap-2">
-                {statusLabel ? (
-                  <span
-                    className={`badge border ${statusClass}`}
-                    title={serviceStatus?.detail}
-                  >
-                    {statusLabel}
-                  </span>
-                ) : (
-                  <span className="badge border border-emerald-500/30 text-emerald-300">
-                    Service current
-                  </span>
-                )}
-                {vehicle.isFavorite ? <span className="badge">Favorite</span> : null}
-                {vehicle.isProject ? <span className="badge">Project</span> : null}
-                {spec ? <span className="badge">3D</span> : null}
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <p className="label-caps">{vehicle.bodyStyle || 'Vehicle'}</p>
+                <h1 className="mt-2 text-3xl font-semibold tracking-tight md:text-4xl">
+                  {vehicle.year} {vehicle.make} {vehicle.model}
+                </h1>
+                {vehicle.trim ? (
+                  <p className="mt-1 text-garage-muted">{vehicle.trim}</p>
+                ) : null}
+                <div className="mt-4 flex flex-wrap items-center gap-2">
+                  {statusLabel ? (
+                    <span
+                      className={`badge border ${statusClass}`}
+                      title={serviceStatus?.detail}
+                    >
+                      {statusLabel}
+                    </span>
+                  ) : (
+                    <span className="badge border border-emerald-500/30 text-emerald-300">
+                      Service current
+                    </span>
+                  )}
+                  {vehicle.isFavorite ? <span className="badge">Favorite</span> : null}
+                  {vehicle.isProject ? <span className="badge">Project</span> : null}
+                  {spec ? <span className="badge">3D</span> : null}
+                </div>
               </div>
+              {onEdit || onLogService ? (
+                <div className="flex shrink-0 flex-col items-stretch gap-2 sm:flex-row sm:items-center">
+                  {onLogService ? (
+                    <button
+                      type="button"
+                      className="btn-primary px-3 text-xs whitespace-nowrap"
+                      onClick={onLogService}
+                    >
+                      Log service
+                    </button>
+                  ) : null}
+                  {onEdit ? (
+                    <button type="button" className="btn px-3 text-xs whitespace-nowrap" onClick={onEdit}>
+                      Edit vehicle
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
             <div className="grid grid-cols-3 gap-4 border-t border-garage-border pt-5 text-sm">
               <div>

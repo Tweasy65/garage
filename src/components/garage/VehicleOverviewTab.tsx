@@ -1,111 +1,90 @@
 import { Trash2 } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 
-import { formatDate } from '@/lib/format'
 import type { VehicleDetail } from '@/lib/vehicleTypes'
+import {
+  buildVehicleSpecSections,
+  firstSpecSectionWithData,
+  type VehicleSpecSectionId,
+} from '@/lib/vehicleSpecGroups'
 
 type VehicleOverviewTabProps = {
   vehicle: VehicleDetail
-  onEdit: () => void
-  onLogService: () => void
   onDelete: () => void
-}
-
-type SpecGroup = {
-  title: string
-  rows: [string, string | null | undefined][]
 }
 
 export default function VehicleOverviewTab({
   vehicle,
-  onEdit,
-  onLogService,
   onDelete,
 }: VehicleOverviewTabProps) {
-  const rawGroups: SpecGroup[] = [
-    {
-      title: 'Identity',
-      rows: [
-        ['VIN', vehicle.vin],
-        ['License plate', vehicle.licensePlate],
-        ['Title status', vehicle.titleStatus],
-        ['Purchase date', formatDate(vehicle.purchaseDate)],
-      ],
-    },
-    {
-      title: 'Powertrain',
-      rows: [
-        ['Body style', vehicle.bodyStyle],
-        [
-          'Engine',
-          [vehicle.engineType, vehicle.engineSize].filter(Boolean).join(' ') || null,
-        ],
-        ['Transmission', vehicle.transmission],
-        ['Fuel type', vehicle.fuelType],
-        ['Drivetrain', vehicle.drivetrain],
-      ],
-    },
-    {
-      title: 'Efficiency',
-      rows: [
-        [
-          'MPG',
-          vehicle.mpgCity != null && vehicle.mpgHighway != null
-            ? `${vehicle.mpgCity} city / ${vehicle.mpgHighway} hwy`
-            : null,
-        ],
-        [
-          'Seating',
-          vehicle.seatingCapacity != null ? String(vehicle.seatingCapacity) : null,
-        ],
-      ],
-    },
-  ]
+  const sections = useMemo(() => buildVehicleSpecSections(vehicle), [vehicle])
+  const [activeSection, setActiveSection] = useState<VehicleSpecSectionId>(() =>
+    firstSpecSectionWithData(sections),
+  )
 
-  const groups = rawGroups
-    .map((group) => ({
-      title: group.title,
-      rows: group.rows.filter((row) => Boolean(row[1])) as [string, string][],
-    }))
-    .filter((group) => group.rows.length > 0)
+  useEffect(() => {
+    setActiveSection((current) => {
+      const currentHasRows = sections.find((s) => s.id === current)?.rows.length
+      if (currentHasRows) return current
+      return firstSpecSectionWithData(sections)
+    })
+  }, [sections])
+
+  const active = sections.find((section) => section.id === activeSection) ?? sections[0]
+  const hasAnySpecs = sections.some((section) => section.rows.length > 0)
 
   return (
-    <div role="tabpanel" id="vehicle-tab-overview" aria-labelledby="tab-overview">
+    <div role="tabpanel" id="vehicle-tab-specs" aria-labelledby="tab-specs">
       <div className="section-header">
         <div>
-          <p className="label-caps">Overview</p>
+          <p className="label-caps">Vehicle</p>
           <h2 className="mt-1 text-base font-semibold">Specifications</h2>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <button type="button" className="btn-primary px-3 text-xs" onClick={onLogService}>
-            Log service
-          </button>
-          <button type="button" className="btn px-3 text-xs" onClick={onEdit}>
-            Edit vehicle
-          </button>
         </div>
       </div>
 
-      <div className="section-body space-y-8">
-        {groups.length === 0 ? (
-          <p className="text-sm text-garage-muted">
-            No specs yet. Use edit vehicle to add VIN, powertrain, and registration details.
-          </p>
-        ) : (
-          groups.map((group) => (
-            <div key={group.title}>
-              <p className="label-caps mb-2">{group.title}</p>
-              <dl className="data-rows">
-                {group.rows.map(([label, value]) => (
-                  <div key={label} className="data-row">
-                    <dt className="data-row-label">{label}</dt>
-                    <dd className="data-row-value">{value}</dd>
-                  </div>
-                ))}
-              </dl>
-            </div>
-          ))
-        )}
+      <div className="spec-layout">
+        <nav className="spec-nav hide-scrollbar" aria-label="Specification sections">
+          {sections.map((section) => {
+            const selected = section.id === activeSection
+            return (
+              <button
+                key={section.id}
+                type="button"
+                aria-current={selected ? 'true' : undefined}
+                className={`spec-nav-item ${selected ? 'spec-nav-item-active' : ''}`}
+                onClick={() => setActiveSection(section.id)}
+              >
+                <span>{section.title}</span>
+                {section.rows.length > 0 ? (
+                  <span className="spec-nav-count">{section.rows.length}</span>
+                ) : null}
+              </button>
+            )
+          })}
+        </nav>
 
+        <div className="spec-panel">
+          <p className="label-caps mb-3">{active.title}</p>
+          {active.rows.length > 0 ? (
+            <dl className="data-rows">
+              {active.rows.map(([label, value]) => (
+                <div key={label} className="data-row">
+                  <dt className="data-row-label">{label}</dt>
+                  <dd className="data-row-value">{value}</dd>
+                </div>
+              ))}
+            </dl>
+          ) : (
+            <p className="text-sm text-garage-muted">
+              {hasAnySpecs
+                ? active.emptyHint
+                : 'No specs yet. Use edit vehicle to add registration and mechanical details.'}
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className="section-body space-y-8 border-t border-garage-border">
         {vehicle.notes ? (
           <div>
             <p className="label-caps mb-2">Notes</p>

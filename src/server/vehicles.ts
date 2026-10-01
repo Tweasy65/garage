@@ -1,11 +1,14 @@
 import { auth } from '@clerk/tanstack-react-start/server'
 import { createServerFn } from '@tanstack/react-start'
+import { randomUUID } from 'node:crypto'
 import { and, desc, eq } from 'drizzle-orm'
 
 import { db } from '@/db'
 import { maintenanceRecords, vehicles } from '@/db/schema'
 import { computeMaintenanceAlerts } from '@/lib/maintenanceAlerts'
 import type { MaintenanceAlert } from '@/lib/maintenanceAlerts'
+import { vehicleToInput } from '@/lib/vehicleFormValues'
+import { mergeTagLists } from '@/lib/tagUtils'
 import type {
   MaintenanceRecord,
   ServiceRecord,
@@ -204,6 +207,26 @@ export const listVehicles = createServerFn({ method: 'GET' }).handler(async () =
   return { vehicles: garage.vehicles, alerts: garage.alerts }
 })
 
+export const listMaintenanceAlerts = createServerFn({ method: 'GET' }).handler(async () => {
+  const { userId } = await auth()
+  if (!userId) {
+    return { alerts: [] as MaintenanceAlert[] }
+  }
+  const garage = await loadGarage(userId)
+  return { alerts: garage.alerts }
+})
+
+export const listGarageTags = createServerFn({ method: 'GET' }).handler(async () => {
+  const userId = await requireUserId()
+  const rows = await db
+    .select({ tags: vehicles.tags })
+    .from(vehicles)
+    .where(eq(vehicles.userId, userId))
+
+  const collected: string[][] = rows.map((row) => row.tags ?? [])
+  return { tags: mergeTagLists(...collected) }
+})
+
 export const listService = createServerFn({ method: 'GET' }).handler(async () => {
   const { userId } = await auth()
   if (!userId) {
@@ -363,6 +386,64 @@ export const updateVehicleMileage = createServerFn({ method: 'POST' })
       .set({ mileage: data.mileage, updatedAt: new Date() })
       .where(and(eq(vehicles.id, data.id), eq(vehicles.userId, userId)))
       .returning({ id: vehicles.id })
+
+    if (!row) throw new Error('Vehicle not found')
+
+    return { vehicle: await loadVehicleDetailForUser(row.id, userId) }
+  })
+
+const COVER_FROM_MODEL_NAME = '3D studio cover'
+
+export const addVehicleCoverFromModel = createServerFn({ method: 'POST' })
+  .inputValidator((data: { id: string; dataUrl: string }) => {
+    const dataUrl = data.dataUrl.trim()
+    if (!dataUrl.startsWith('data:image/jpeg') && !dataUrl.startsWith('data:image/png')) {
+      throw new Error('Invalid cover image')
+    }
+    if (dataUrl.length > MAX_ASSET_CHARS) {
+      throw new Error('Generated image is too large')
+    }
+    return { id: data.id, dataUrl }
+  })
+  .handler(async ({ data }) => {
+    const userId = await requireUserId()
+    const detail = await loadVehicleDetailForUser(data.id, userId)
+
+    const modelAsset = detail.assets.find(
+      (asset) => asset.id === detail.modelAssetId && asset.kind === 'model',
+    )
+    if (!modelAsset) {
+      throw new Error('Upload a 3D model before generating a cover photo')
+    }
+
+    const withoutPrevious = detail.assets.filter(
+      (asset) => !(asset.kind === 'image' && asset.name === COVER_FROM_MODEL_NAME),
+    )
+    const imageCount = withoutPrevious.filter((asset) => asset.kind === 'image').length
+    if (imageCount >= MAX_ASSETS) {
+      throw new Error('Photo limit reached. Remove a photo first.')
+    }
+
+    const coverAsset: VehicleAsset = {
+      id: randomUUID(),
+      kind: 'image',
+      name: COVER_FROM_MODEL_NAME,
+      mime: 'image/jpeg',
+      src: data.dataUrl,
+      createdAt: new Date().toISOString(),
+    }
+
+    const values = normalizeVehicleInput({
+      ...vehicleToInput(detail),
+      assets: [...withoutPrevious, coverAsset],
+      imageUrl: coverAsset.src,
+    })
+
+    const [row] = await db
+      .update(vehicles)
+      .set({ ...values, updatedAt: new Date() })
+      .where(and(eq(vehicles.id, data.id), eq(vehicles.userId, userId)))
+      .returning()
 
     if (!row) throw new Error('Vehicle not found')
 

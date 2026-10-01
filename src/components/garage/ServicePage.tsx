@@ -1,12 +1,14 @@
-import { AlertTriangle, CheckCircle2, Clock3, Info, Plus } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { Link, useNavigate, useRouter } from '@tanstack/react-router'
 import { useMemo } from 'react'
 
+import MaintenanceAlertRows from '@/components/garage/MaintenanceAlertRows'
 import MaintenanceForm from '@/components/garage/MaintenanceForm'
 import MaintenanceList from '@/components/garage/MaintenanceList'
 import Modal from '@/components/garage/Modal'
 import PageShell from '@/components/garage/PageShell'
 import ServiceStats, { RECENT_DAYS, isRecent } from '@/components/garage/ServiceStats'
+import { useGarageAlerts } from '@/components/garage/garageAlertsContext'
 import { MAINTENANCE_TYPES } from '@/data/vehicleCatalog'
 import type { MaintenanceAlert } from '@/lib/maintenanceAlerts'
 import type {
@@ -14,7 +16,7 @@ import type {
   ServiceRecord,
   VehicleSummary,
 } from '@/lib/vehicleTypes'
-import { addMaintenanceRecord, deleteMaintenanceRecord } from '@/server/maintenance'
+import { addMaintenanceRecord, deleteMaintenanceRecord, updateMaintenanceRecord } from '@/server/maintenance'
 
 export type ServiceFilters = {
   status?: 'all' | 'overdue' | 'due-soon' | 'missing' | 'recent' | 'history'
@@ -32,18 +34,6 @@ const STATUS_OPTIONS = [
   { value: 'history', label: 'History' },
 ] as const
 
-const alertIcon = {
-  overdue: AlertTriangle,
-  'due-soon': Clock3,
-  missing: Info,
-}
-
-const alertClass = {
-  overdue: 'text-red-300',
-  'due-soon': 'text-amber-300',
-  missing: 'text-garage-muted',
-}
-
 type ServicePageProps = {
   vehicles: VehicleSummary[]
   alerts: MaintenanceAlert[]
@@ -59,6 +49,7 @@ export default function ServicePage({
 }: ServicePageProps) {
   const navigate = useNavigate({ from: '/service' })
   const router = useRouter()
+  const { refreshAlerts } = useGarageAlerts()
   const status = filters.status ?? 'all'
   const vehicleId = filters.vehicle ?? ''
   const type = filters.type ?? ''
@@ -71,6 +62,8 @@ export default function ServicePage({
   }, [records])
 
   const showHistory = status === 'all' || status === 'history' || status === 'recent'
+  const alertStatusFilter =
+    status === 'overdue' || status === 'due-soon' || status === 'missing'
 
   const filteredAlerts = useMemo(() => {
     if (status === 'history' || status === 'recent') return []
@@ -118,9 +111,14 @@ export default function ServicePage({
     })
   }
 
+  async function afterGarageChange() {
+    await router.invalidate()
+    await refreshAlerts()
+  }
+
   async function handleAdd(values: MaintenanceInput) {
     await addMaintenanceRecord({ data: values })
-    await router.invalidate()
+    await afterGarageChange()
     await navigate({
       search: {
         status: filters.status,
@@ -132,9 +130,13 @@ export default function ServicePage({
   }
 
   async function handleDelete(id: string) {
-    if (!window.confirm('Remove this service record?')) return
     await deleteMaintenanceRecord({ data: { id } })
-    await router.invalidate()
+    await afterGarageChange()
+  }
+
+  async function handleUpdate(id: string, values: MaintenanceInput) {
+    await updateMaintenanceRecord({ data: { ...values, id } })
+    await afterGarageChange()
   }
 
   return (
@@ -230,49 +232,14 @@ export default function ServicePage({
             </p>
           ) : (
             <>
-              {status !== 'history' && status !== 'recent' ? (
+              {alertStatusFilter ? (
                 <section className="space-y-3">
                   <p className="label-caps">Alerts</p>
-                  {filteredAlerts.length === 0 ? (
-                    <div className="flex items-center gap-2 text-sm text-garage-muted">
-                      <CheckCircle2 className="size-4 text-emerald-400" />
-                      No alerts for this filter.
-                    </div>
-                  ) : (
-                    <ul className="divide-y divide-garage-border border border-garage-border">
-                      {filteredAlerts.map((alert) => {
-                        const Icon = alertIcon[alert.severity]
-                        return (
-                          <li key={alert.id}>
-                            <button
-                              type="button"
-                              className="flex w-full items-start gap-3 px-4 py-3 text-left transition hover:bg-white/5"
-                              onClick={() =>
-                                setFilter({
-                                  vehicle: alert.vehicleId,
-                                })
-                              }
-                            >
-                              <Icon
-                                className={`mt-0.5 size-4 shrink-0 ${alertClass[alert.severity]}`}
-                              />
-                              <div className="min-w-0">
-                                <p className="text-sm font-medium">{alert.title}</p>
-                                <p className="mt-0.5 text-sm text-garage-muted">
-                                  {alert.vehicleLabel} · {alert.detail}
-                                </p>
-                              </div>
-                              <span
-                                className={`ml-auto shrink-0 text-[11px] font-semibold uppercase tracking-wider ${alertClass[alert.severity]}`}
-                              >
-                                {alert.severity.replace('-', ' ')}
-                              </span>
-                            </button>
-                          </li>
-                        )
-                      })}
-                    </ul>
-                  )}
+                  <MaintenanceAlertRows
+                    alerts={filteredAlerts}
+                    linkToVehicleService
+                    emptyMessage="No alerts for this filter."
+                  />
                 </section>
               ) : null}
 
@@ -283,6 +250,7 @@ export default function ServicePage({
                     records={filteredRecords}
                     showVehicle={!vehicleId}
                     onDelete={handleDelete}
+                    onUpdate={handleUpdate}
                   />
                 </section>
               ) : null}

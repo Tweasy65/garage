@@ -1,9 +1,9 @@
 import { Link } from '@tanstack/react-router'
 
-export type VehicleDetailTab = 'overview' | 'service' | 'media'
+export type VehicleDetailTab = 'specs' | 'service' | 'media'
 
 const TABS: { id: VehicleDetailTab; label: string }[] = [
-  { id: 'overview', label: 'Overview' },
+  { id: 'specs', label: 'Specs' },
   { id: 'service', label: 'Service' },
   { id: 'media', label: 'Media' },
 ]
@@ -18,8 +18,10 @@ type VehicleDetailTabsProps = {
 }
 
 export function parseVehicleDetailTab(value: unknown): VehicleDetailTab {
+  if (value === 'alerts') return 'service'
   if (value === 'service' || value === 'media') return value
-  return 'overview'
+  if (value === 'overview') return 'specs'
+  return 'specs'
 }
 
 export default function VehicleDetailTabs({
@@ -39,7 +41,7 @@ export default function VehicleDetailTabs({
           to="/vehicles/$vehicleId"
           params={{ vehicleId }}
           search={{
-            tab: tab.id === 'overview' ? undefined : tab.id,
+            tab: tab.id === 'specs' ? undefined : tab.id,
             edit: tab.id === active ? search?.edit : undefined,
             log: tab.id === active ? search?.log : undefined,
           }}

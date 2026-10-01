@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import { MAINTENANCE_TYPES } from '@/data/vehicleCatalog'
-import type { MaintenanceInput } from '@/lib/vehicleTypes'
+import type { MaintenanceInput, MaintenanceRecord } from '@/lib/vehicleTypes'
 
 type VehicleOption = {
   id: string
@@ -13,6 +13,8 @@ type MaintenanceFormProps = {
   vehicleId?: string
   vehicles?: VehicleOption[]
   defaultMileage?: number
+  initialRecord?: MaintenanceRecord | null
+  submitLabel?: string
   onSubmit: (values: MaintenanceInput) => Promise<void>
   onCancel?: () => void
 }
@@ -21,20 +23,33 @@ export default function MaintenanceForm({
   vehicleId,
   vehicles,
   defaultMileage,
+  initialRecord,
+  submitLabel = 'Add record',
   onSubmit,
   onCancel,
 }: MaintenanceFormProps) {
+  const editing = Boolean(initialRecord)
   const [selectedId, setSelectedId] = useState(
-    vehicleId ?? vehicles?.[0]?.id ?? '',
+    vehicleId ?? initialRecord?.vehicleId ?? vehicles?.[0]?.id ?? '',
   )
   const selected = vehicles?.find((vehicle) => vehicle.id === selectedId)
   const mileageDefault = selected?.mileage ?? defaultMileage
-  const [values, setValues] = useState(() => emptyValues(mileageDefault))
+  const [values, setValues] = useState(() =>
+    initialRecord
+      ? recordToFormValues(initialRecord)
+      : emptyValues(mileageDefault),
+  )
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const showVehicleSelect = (vehicles?.length ?? 0) > 1 && !vehicleId
+  const showVehicleSelect =
+    !editing && (vehicles?.length ?? 0) > 1 && !vehicleId
 
   useEffect(() => {
+    if (initialRecord) {
+      setSelectedId(initialRecord.vehicleId)
+      setValues(recordToFormValues(initialRecord))
+      return
+    }
     const nextId = vehicleId ?? vehicles?.[0]?.id ?? ''
     setSelectedId(nextId)
     const nextMileage =
@@ -43,7 +58,7 @@ export default function MaintenanceForm({
       ...current,
       mileage: nextMileage != null ? String(nextMileage) : current.mileage,
     }))
-  }, [defaultMileage, vehicleId, vehicles])
+  }, [defaultMileage, initialRecord, vehicleId, vehicles])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -71,7 +86,9 @@ export default function MaintenanceForm({
           ? Number(values.nextDueMileage)
           : null,
       })
-      setValues(emptyValues(values.mileage ? Number(values.mileage) : mileageDefault))
+      if (!editing) {
+        setValues(emptyValues(values.mileage ? Number(values.mileage) : mileageDefault))
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong')
     } finally {
@@ -82,7 +99,7 @@ export default function MaintenanceForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid gap-4 md:grid-cols-2">
-        {showVehicleSelect || (!vehicleId && (vehicles?.length ?? 0) > 0) ? (
+        {showVehicleSelect || (!vehicleId && !editing && (vehicles?.length ?? 0) > 0) ? (
           <label className="block space-y-1.5 md:col-span-2">
             <span className="label-caps">Vehicle *</span>
             <select
@@ -215,7 +232,7 @@ export default function MaintenanceForm({
       {error ? <p className="text-sm text-red-300">{error}</p> : null}
       <div className="flex gap-3">
         <button type="submit" disabled={pending} className="btn-primary">
-          {pending ? 'Saving…' : 'Add record'}
+          {pending ? 'Saving…' : submitLabel}
         </button>
         {onCancel ? (
           <button type="button" onClick={onCancel} className="btn">
@@ -238,5 +255,21 @@ function emptyValues(mileage?: number) {
     serviceProvider: '',
     nextDueDate: '',
     nextDueMileage: '',
+  }
+}
+
+function recordToFormValues(record: MaintenanceRecord) {
+  const knownType = (MAINTENANCE_TYPES as readonly string[]).includes(record.type)
+  return {
+    type: knownType ? record.type : 'Other',
+    customType: knownType ? '' : record.type,
+    date: record.date.slice(0, 10),
+    description: record.description ?? '',
+    cost: record.costCents != null ? String(record.costCents / 100) : '',
+    mileage: record.mileage != null ? String(record.mileage) : '',
+    serviceProvider: record.serviceProvider ?? '',
+    nextDueDate: record.nextDueDate?.slice(0, 10) ?? '',
+    nextDueMileage:
+      record.nextDueMileage != null ? String(record.nextDueMileage) : '',
   }
 }

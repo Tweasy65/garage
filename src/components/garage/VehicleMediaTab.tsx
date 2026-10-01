@@ -1,6 +1,7 @@
 import type { VehicleDetail } from '@/lib/vehicleTypes'
 
 import VehicleAssetGallery from '@/components/garage/VehicleAssetGallery'
+import VehicleCoverFromModel from '@/components/garage/VehicleCoverFromModel'
 
 type VehicleMediaTabProps = {
   vehicle: VehicleDetail
@@ -24,7 +25,8 @@ export default function VehicleMediaTab({ vehicle, onEdit }: VehicleMediaTabProp
         </button>
       </div>
 
-      <div className="section-body">
+      <div className="section-body space-y-6">
+        <VehicleCoverFromModel vehicle={vehicle} />
         {hasMedia ? (
           <VehicleAssetGallery
             assets={vehicle.assets}

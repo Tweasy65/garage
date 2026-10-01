@@ -1,4 +1,4 @@
-import type { MaintenanceRecord, VehicleSummary } from '@/lib/vehicleTypes'
+import type { MaintenanceRecord, VehicleDetail, VehicleSummary } from '@/lib/vehicleTypes'
 
 export type AlertSeverity = 'overdue' | 'due-soon' | 'missing'
 
@@ -229,4 +229,22 @@ export function computeMaintenanceAlerts(
 
   const rank = { overdue: 0, 'due-soon': 1, missing: 2 }
   return alerts.sort((a, b) => rank[a.severity] - rank[b.severity])
+}
+
+export function alertsForVehicle(vehicle: VehicleDetail): MaintenanceAlert[] {
+  const summary: VehicleSummary = {
+    id: vehicle.id,
+    make: vehicle.make,
+    model: vehicle.model,
+    trim: vehicle.trim,
+    year: vehicle.year,
+    color: vehicle.color,
+    mileage: vehicle.mileage,
+    isProject: vehicle.isProject,
+    isFavorite: vehicle.isFavorite,
+    imageUrl: vehicle.imageUrl,
+    tags: vehicle.tags,
+    maintenanceCount: vehicle.maintenance.length,
+  }
+  return computeMaintenanceAlerts([summary], { [vehicle.id]: vehicle.maintenance })
 }
