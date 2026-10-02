@@ -224,7 +224,7 @@ export const updateProjectItem = createServerFn({ method: 'POST' })
       patch.notes = data.notes?.trim() || null
     }
     if (data.instructionsMd !== undefined) {
-      patch.instructionsMd = data.instructionsMd.trim() || null
+      patch.instructionsMd = data.instructionsMd?.trim() || null
     }
     if (data.area !== undefined) {
       patch.area = parseProjectArea(data.area)
