@@ -11,12 +11,14 @@ import { vehicleToInput } from '@/lib/vehicleFormValues'
 import { mergeTagLists } from '@/lib/tagUtils'
 import type {
   MaintenanceRecord,
+  ProjectItem,
   ServiceRecord,
   VehicleAsset,
   VehicleDetail,
   VehicleInput,
   VehicleSummary,
 } from '@/lib/vehicleTypes'
+import { loadProjectItems } from '@/server/projectItems'
 
 async function requireUserId(): Promise<string> {
   const { userId } = await auth()
@@ -79,6 +81,7 @@ function mapVehicleSummary(
 function mapVehicleDetail(
   row: typeof vehicles.$inferSelect,
   maintenance: MaintenanceRecord[],
+  projectItemRows: ProjectItem[] = [],
 ): VehicleDetail {
   return {
     ...mapVehicleSummary(row, maintenance.length),
@@ -99,6 +102,7 @@ function mapVehicleDetail(
     assets: normalizeAssets(row.assets, row.imageUrl),
     modelAssetId: row.modelAssetId,
     maintenance,
+    projectItems: projectItemRows,
   }
 }
 
@@ -318,7 +322,11 @@ export const getVehicle = createServerFn({ method: 'GET' })
       .orderBy(desc(maintenanceRecords.date))
 
     return {
-      vehicle: mapVehicleDetail(vehicle, maintenance.map(mapMaintenance)),
+      vehicle: mapVehicleDetail(
+        vehicle,
+        maintenance.map(mapMaintenance),
+        await loadProjectItems(vehicle.id),
+      ),
     }
   })
 
@@ -333,7 +341,7 @@ export const createVehicle = createServerFn({ method: 'POST' })
       .values({ ...values, userId })
       .returning()
 
-    return { vehicle: mapVehicleDetail(row, []) }
+    return { vehicle: mapVehicleDetail(row, [], []) }
   })
 
 async function loadVehicleDetailForUser(vehicleId: string, userId: string) {
@@ -351,7 +359,11 @@ async function loadVehicleDetailForUser(vehicleId: string, userId: string) {
     .where(eq(maintenanceRecords.vehicleId, row.id))
     .orderBy(desc(maintenanceRecords.date))
 
-  return mapVehicleDetail(row, maintenance.map(mapMaintenance))
+  return mapVehicleDetail(
+    row,
+    maintenance.map(mapMaintenance),
+    await loadProjectItems(row.id),
+  )
 }
 
 export const updateVehicle = createServerFn({ method: 'POST' })

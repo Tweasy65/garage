@@ -10,14 +10,21 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ProjectsRouteImport } from './routes/projects'
 import { Route as ServiceRouteImport } from './routes/service'
 import { Route as ApiHealthRouteImport } from './routes/api.health'
 import { Route as VehiclesVehicleIdRouteImport } from './routes/vehicles.$vehicleId'
+import { Route as ProjectsVehicleIdCardboardRouteImport } from './routes/projects_.$vehicleId.cardboard'
 import { Route as VehiclesVehicleIdIndexRouteImport } from './routes/vehicles.$vehicleId.index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProjectsRoute = ProjectsRouteImport.update({
+  id: '/projects',
+  path: '/projects',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ServiceRoute = ServiceRouteImport.update({
@@ -35,6 +42,12 @@ const VehiclesVehicleIdRoute = VehiclesVehicleIdRouteImport.update({
   path: '/vehicles/$vehicleId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProjectsVehicleIdCardboardRoute =
+  ProjectsVehicleIdCardboardRouteImport.update({
+    id: '/projects_/$vehicleId/cardboard',
+    path: '/projects/$vehicleId/cardboard',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const VehiclesVehicleIdIndexRoute = VehiclesVehicleIdIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -43,49 +56,67 @@ const VehiclesVehicleIdIndexRoute = VehiclesVehicleIdIndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/projects': typeof ProjectsRoute
   '/service': typeof ServiceRoute
   '/api/health': typeof ApiHealthRoute
   '/vehicles/$vehicleId': typeof VehiclesVehicleIdRouteWithChildren
+  '/projects/$vehicleId/cardboard': typeof ProjectsVehicleIdCardboardRoute
   '/vehicles/$vehicleId/': typeof VehiclesVehicleIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/projects': typeof ProjectsRoute
   '/service': typeof ServiceRoute
   '/api/health': typeof ApiHealthRoute
+  '/projects/$vehicleId/cardboard': typeof ProjectsVehicleIdCardboardRoute
   '/vehicles/$vehicleId': typeof VehiclesVehicleIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/projects': typeof ProjectsRoute
   '/service': typeof ServiceRoute
   '/api/health': typeof ApiHealthRoute
   '/vehicles/$vehicleId': typeof VehiclesVehicleIdRouteWithChildren
+  '/projects_/$vehicleId/cardboard': typeof ProjectsVehicleIdCardboardRoute
   '/vehicles/$vehicleId/': typeof VehiclesVehicleIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/projects'
     | '/service'
     | '/api/health'
     | '/vehicles/$vehicleId'
+    | '/projects/$vehicleId/cardboard'
     | '/vehicles/$vehicleId/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/service' | '/api/health' | '/vehicles/$vehicleId'
+  to:
+    | '/'
+    | '/projects'
+    | '/service'
+    | '/api/health'
+    | '/projects/$vehicleId/cardboard'
+    | '/vehicles/$vehicleId'
   id:
     | '__root__'
     | '/'
+    | '/projects'
     | '/service'
     | '/api/health'
     | '/vehicles/$vehicleId'
+    | '/projects_/$vehicleId/cardboard'
     | '/vehicles/$vehicleId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ProjectsRoute: typeof ProjectsRoute
   ServiceRoute: typeof ServiceRoute
   ApiHealthRoute: typeof ApiHealthRoute
   VehiclesVehicleIdRoute: typeof VehiclesVehicleIdRouteWithChildren
+  ProjectsVehicleIdCardboardRoute: typeof ProjectsVehicleIdCardboardRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -95,6 +126,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/projects': {
+      id: '/projects'
+      path: '/projects'
+      fullPath: '/projects'
+      preLoaderRoute: typeof ProjectsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/service': {
@@ -116,6 +154,13 @@ declare module '@tanstack/react-router' {
       path: '/vehicles/$vehicleId'
       fullPath: '/vehicles/$vehicleId'
       preLoaderRoute: typeof VehiclesVehicleIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/projects_/$vehicleId/cardboard': {
+      id: '/projects_/$vehicleId/cardboard'
+      path: '/projects/$vehicleId/cardboard'
+      fullPath: '/projects/$vehicleId/cardboard'
+      preLoaderRoute: typeof ProjectsVehicleIdCardboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/vehicles/$vehicleId/': {
@@ -141,9 +186,11 @@ const VehiclesVehicleIdRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ProjectsRoute: ProjectsRoute,
   ServiceRoute: ServiceRoute,
   ApiHealthRoute: ApiHealthRoute,
   VehiclesVehicleIdRoute: VehiclesVehicleIdRouteWithChildren,
+  ProjectsVehicleIdCardboardRoute: ProjectsVehicleIdCardboardRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

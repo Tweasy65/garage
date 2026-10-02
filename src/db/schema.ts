@@ -93,8 +93,48 @@ export const maintenanceRecords = pgTable(
   ],
 )
 
+export const PROJECT_AREAS = [
+  'engine',
+  'body',
+  'interior',
+  'electrical',
+  'misc',
+] as const
+
+export type ProjectArea = (typeof PROJECT_AREAS)[number]
+
+export const projectItems = pgTable(
+  'project_items',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    vehicleId: uuid('vehicle_id')
+      .notNull()
+      .references(() => vehicles.id, { onDelete: 'cascade' }),
+    userId: text('user_id').notNull(),
+    title: text('title').notNull(),
+    notes: text('notes'),
+    instructionsMd: text('instructions_md'),
+    area: text('area').$type<ProjectArea>().notNull().default('misc'),
+    done: boolean('done').notNull().default(false),
+    completedAt: timestamp('completed_at', { withTimezone: true }),
+    sortOrder: integer('sort_order').notNull().default(0),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index('project_items_vehicle_idx').on(t.vehicleId),
+    index('project_items_user_idx').on(t.userId),
+    index('project_items_vehicle_area_idx').on(t.vehicleId, t.area, t.sortOrder),
+  ],
+)
+
 export const vehiclesRelations = relations(vehicles, ({ many }) => ({
   maintenance: many(maintenanceRecords),
+  projectItems: many(projectItems),
 }))
 
 export const maintenanceRecordsRelations = relations(
@@ -106,3 +146,10 @@ export const maintenanceRecordsRelations = relations(
     }),
   }),
 )
+
+export const projectItemsRelations = relations(projectItems, ({ one }) => ({
+  vehicle: one(vehicles, {
+    fields: [projectItems.vehicleId],
+    references: [vehicles.id],
+  }),
+}))

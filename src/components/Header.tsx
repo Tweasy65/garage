@@ -43,6 +43,13 @@ export default function Header() {
                 Collection
               </Link>
               <Link
+                to="/projects"
+                className="text-garage-muted hover:text-garage-text"
+                activeProps={{ className: 'text-garage-text' }}
+              >
+                Projects
+              </Link>
+              <Link
                 to="/service"
                 className="text-garage-muted hover:text-garage-text"
                 activeProps={{ className: 'text-garage-text' }}

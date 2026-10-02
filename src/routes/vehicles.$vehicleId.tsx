@@ -39,6 +39,8 @@ function VehicleLayout() {
   const search = Route.useSearch()
   const tab = parseVehicleDetailTab(search.tab)
   const navigate = useNavigate({ from: '/vehicles/$vehicleId' })
+  const activeTab =
+    tab === 'project' && !vehicle.isProject ? 'specs' : tab
 
   function openEdit() {
     void navigate({ search: (prev) => ({ ...prev, edit: true }) })
@@ -64,7 +66,8 @@ function VehicleLayout() {
       <div className="garage-panel overflow-hidden">
         <VehicleDetailTabs
           vehicleId={vehicle.id}
-          active={tab}
+          active={activeTab}
+          isProject={vehicle.isProject}
           search={{ edit: search.edit, log: search.log }}
         />
         <Outlet />

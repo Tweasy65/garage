@@ -35,6 +35,18 @@ if (rootVars && typeof rootVars === 'object' && !Array.isArray(rootVars)) {
   dist.vars = { ...(dist.vars ?? {}), ...rootVars }
 }
 
+for (const key of [
+  'routes',
+  'workers_dev',
+  'observability',
+  'compatibility_date',
+  'compatibility_flags',
+]) {
+  if (root[key] !== undefined && dist[key] === undefined) {
+    dist[key] = root[key]
+  }
+}
+
 if (
   dist.vars &&
   typeof dist.vars === 'object' &&

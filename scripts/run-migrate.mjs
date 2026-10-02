@@ -10,10 +10,11 @@ const root = path.join(__dirname, '..')
 
 loadEnv({ path: path.join(root, '.env.local') })
 loadEnv({ path: path.join(root, '.env') })
+loadEnv({ path: path.join(root, '.dev.vars') })
 
 const url = process.env.DATABASE_URL
 if (!url?.trim()) {
-  console.error('DATABASE_URL is not set. Add your Neon connection string to .env.local.')
+  console.error('DATABASE_URL is not set. Add your Neon connection string to .env.local or .dev.vars.')
   process.exit(1)
 }
 

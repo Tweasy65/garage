@@ -5,6 +5,7 @@
     "VITE_CLERK_PUBLISHABLE_KEY": "pk_test_bmF0aXZlLXNocmltcC05My5jbGVyay5hY2NvdW50cy5kZXYk"
   },
   "name": "garage",
+  "workers_dev": true,
   "compatibility_date": "2025-09-02",
   "compatibility_flags": [
     "nodejs_compat",

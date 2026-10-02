@@ -90,6 +90,40 @@ export type VehicleDetail = VehicleSummary & {
   assets: VehicleAsset[]
   modelAssetId: string | null
   maintenance: MaintenanceRecord[]
+  projectItems: ProjectItem[]
+}
+
+export type ProjectArea =
+  | 'engine'
+  | 'body'
+  | 'interior'
+  | 'electrical'
+  | 'misc'
+
+export type ProjectItem = {
+  id: string
+  vehicleId: string
+  title: string
+  notes: string | null
+  instructionsMd: string | null
+  area: ProjectArea
+  done: boolean
+  completedAt: string | null
+  sortOrder: number
+  createdAt: string
+  updatedAt: string
+}
+
+export type ProjectItemInput = {
+  vehicleId: string
+  title: string
+  notes?: string | null
+  area: ProjectArea
+}
+
+export type ProjectBoard = {
+  vehicle: VehicleSummary
+  items: ProjectItem[]
 }
 
 export type MaintenanceRecord = {

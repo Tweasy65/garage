@@ -5,6 +5,7 @@ import { useGarageAlerts } from '@/components/garage/garageAlertsContext'
 import VehicleForm from '@/components/garage/VehicleForm'
 import VehicleMediaTab from '@/components/garage/VehicleMediaTab'
 import VehicleOverviewTab from '@/components/garage/VehicleOverviewTab'
+import VehicleProjectTab from '@/components/garage/VehicleProjectTab'
 import VehicleServiceTab from '@/components/garage/VehicleServiceTab'
 import { useVehicleDetailContext } from '@/components/garage/vehicleDetailContext'
 import { vehicleToInput } from '@/lib/vehicleFormValues'
@@ -14,6 +15,8 @@ import { deleteVehicle, updateVehicle } from '@/server/vehicles'
 
 export default function VehicleDetailPage() {
   const { vehicle, search, tab } = useVehicleDetailContext()
+  const activeTab =
+    tab === 'project' && !vehicle.isProject ? 'specs' : tab
   const navigate = useNavigate({ from: '/vehicles/$vehicleId' })
   const router = useRouter()
   const { refreshAlerts } = useGarageAlerts()
@@ -30,7 +33,7 @@ export default function VehicleDetailPage() {
   }
 
   async function handleDelete() {
-    if (!window.confirm('Delete this vehicle and all maintenance records?')) return
+    if (!window.confirm('Delete this vehicle, its service history, and project list?')) return
     await deleteVehicle({ data: { id: vehicle.id } })
     await afterGarageChange()
     await router.navigate({ to: '/' })
@@ -70,13 +73,16 @@ export default function VehicleDetailPage() {
 
   return (
     <>
-      {tab === 'specs' ? (
+      {activeTab === 'specs' ? (
         <VehicleOverviewTab
           vehicle={vehicle}
           onDelete={() => void handleDelete()}
         />
       ) : null}
-      {tab === 'service' ? (
+      {activeTab === 'project' && vehicle.isProject ? (
+        <VehicleProjectTab vehicle={vehicle} />
+      ) : null}
+      {activeTab === 'service' ? (
         <VehicleServiceTab
           vehicle={vehicle}
           logOpen={Boolean(search.log)}
@@ -87,7 +93,7 @@ export default function VehicleDetailPage() {
           onUpdateRecord={handleUpdateRecord}
         />
       ) : null}
-      {tab === 'media' ? (
+      {activeTab === 'media' ? (
         <VehicleMediaTab vehicle={vehicle} onEdit={openEdit} />
       ) : null}
 
