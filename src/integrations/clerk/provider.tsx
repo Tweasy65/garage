@@ -1,5 +1,6 @@
 import { ClerkProvider } from '@clerk/tanstack-react-start'
 
+import { clerkAuthorizedParties } from '@/lib/clerkAuthorizedParties'
 import { getClerkPublishableKey } from '@/lib/clerkPublishableKey'
 
 export default function AppClerkProvider({
@@ -11,6 +12,7 @@ export default function AppClerkProvider({
   return (
     <ClerkProvider
       {...(publishableKey ? { publishableKey } : {})}
+      allowedRedirectOrigins={clerkAuthorizedParties()}
       afterSignOutUrl="/"
     >
       {children}

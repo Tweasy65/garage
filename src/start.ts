@@ -1,6 +1,7 @@
 import { clerkMiddleware } from '@clerk/tanstack-react-start/server'
 import { createCsrfMiddleware, createStart } from '@tanstack/react-start'
 
+import { clerkAuthorizedParties } from '@/lib/clerkAuthorizedParties'
 import { getClerkPublishableKey } from '@/lib/clerkPublishableKey'
 import { workerEnv } from '@/lib/workerEnv'
 
@@ -17,6 +18,7 @@ export const startInstance = createStart(() => ({
       return {
         ...(secretKey ? { secretKey } : {}),
         ...(publishableKey ? { publishableKey } : {}),
+        authorizedParties: clerkAuthorizedParties(),
       }
     }),
   ],

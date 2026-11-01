@@ -1,6 +1,4 @@
-import { auth } from '@clerk/tanstack-react-start/server'
 import { createServerFn } from '@tanstack/react-start'
-import { randomUUID } from 'node:crypto'
 import { and, desc, eq } from 'drizzle-orm'
 
 import { db } from '@/db'
@@ -18,65 +16,9 @@ import type {
   VehicleInput,
   VehicleSummary,
 } from '@/lib/vehicleTypes'
+import { optionalUserId, requireUserId } from '@/server/auth'
+import { mapMaintenance, mapVehicleSummary, toIso } from '@/server/mappers'
 import { loadProjectItems } from '@/server/projectItems'
-
-async function requireUserId(): Promise<string> {
-  const { userId } = await auth()
-  if (!userId) throw new Error('Sign in to manage your garage')
-  return userId
-}
-
-function toIso(value: Date | null | undefined): string | null {
-  return value ? value.toISOString() : null
-}
-
-function mapMaintenance(row: typeof maintenanceRecords.$inferSelect): MaintenanceRecord {
-  return {
-    id: row.id,
-    vehicleId: row.vehicleId,
-    date: row.date.toISOString(),
-    type: row.type,
-    description: row.description,
-    costCents: row.costCents,
-    mileage: row.mileage,
-    serviceProvider: row.serviceProvider,
-    nextDueDate: toIso(row.nextDueDate),
-    nextDueMileage: row.nextDueMileage,
-  }
-}
-
-function mapVehicleSummary(
-  row: Pick<
-    typeof vehicles.$inferSelect,
-    | 'id'
-    | 'make'
-    | 'model'
-    | 'trim'
-    | 'year'
-    | 'color'
-    | 'mileage'
-    | 'isProject'
-    | 'isFavorite'
-    | 'imageUrl'
-    | 'tags'
-  >,
-  maintenanceCount: number,
-): VehicleSummary {
-  return {
-    id: row.id,
-    make: row.make,
-    model: row.model,
-    trim: row.trim,
-    year: row.year,
-    color: row.color,
-    mileage: row.mileage,
-    isProject: row.isProject,
-    isFavorite: row.isFavorite,
-    imageUrl: row.imageUrl,
-    tags: row.tags ?? [],
-    maintenanceCount,
-  }
-}
 
 function mapVehicleDetail(
   row: typeof vehicles.$inferSelect,
@@ -203,7 +145,7 @@ function normalizeVehicleInput(data: VehicleInput) {
 }
 
 export const listVehicles = createServerFn({ method: 'GET' }).handler(async () => {
-  const { userId } = await auth()
+  const userId = await optionalUserId()
   if (!userId) {
     return { vehicles: [] as VehicleSummary[], alerts: [] as MaintenanceAlert[] }
   }
@@ -212,7 +154,7 @@ export const listVehicles = createServerFn({ method: 'GET' }).handler(async () =
 })
 
 export const listMaintenanceAlerts = createServerFn({ method: 'GET' }).handler(async () => {
-  const { userId } = await auth()
+  const userId = await optionalUserId()
   if (!userId) {
     return { alerts: [] as MaintenanceAlert[] }
   }
@@ -232,7 +174,7 @@ export const listGarageTags = createServerFn({ method: 'GET' }).handler(async ()
 })
 
 export const listService = createServerFn({ method: 'GET' }).handler(async () => {
-  const { userId } = await auth()
+  const userId = await optionalUserId()
   if (!userId) {
     return {
       vehicles: [] as VehicleSummary[],
@@ -283,10 +225,7 @@ async function loadGarage(userId: string) {
       `${vehicle.year} ${vehicle.make} ${vehicle.model}`,
     ]),
   )
-  const records: ServiceRecord[] = (recordsByVehicle
-    ? Object.values(recordsByVehicle).flat()
-    : []
-  )
+  const records: ServiceRecord[] = Object.values(recordsByVehicle).flat()
     .map((record) => ({
       ...record,
       vehicleLabel: labels.get(record.vehicleId) ?? 'Vehicle',
@@ -325,7 +264,7 @@ export const getVehicle = createServerFn({ method: 'GET' })
       vehicle: mapVehicleDetail(
         vehicle,
         maintenance.map(mapMaintenance),
-        await loadProjectItems(vehicle.id),
+        await loadProjectItems(vehicle.id, userId),
       ),
     }
   })
@@ -362,7 +301,7 @@ async function loadVehicleDetailForUser(vehicleId: string, userId: string) {
   return mapVehicleDetail(
     row,
     maintenance.map(mapMaintenance),
-    await loadProjectItems(row.id),
+    await loadProjectItems(row.id, userId),
   )
 }
 
@@ -437,7 +376,7 @@ export const addVehicleCoverFromModel = createServerFn({ method: 'POST' })
     }
 
     const coverAsset: VehicleAsset = {
-      id: randomUUID(),
+      id: crypto.randomUUID(),
       kind: 'image',
       name: COVER_FROM_MODEL_NAME,
       mime: 'image/jpeg',

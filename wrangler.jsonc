@@ -1,9 +1,5 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "vars": {
-    "CLERK_PUBLISHABLE_KEY": "pk_test_bmF0aXZlLXNocmltcC05My5jbGVyay5hY2NvdW50cy5kZXYk",
-    "VITE_CLERK_PUBLISHABLE_KEY": "pk_test_bmF0aXZlLXNocmltcC05My5jbGVyay5hY2NvdW50cy5kZXYk"
-  },
   "name": "garage",
   "workers_dev": true,
   "compatibility_date": "2025-09-02",
@@ -21,5 +17,8 @@
   ],
   "observability": {
     "enabled": true
+  },
+  "secrets": {
+    "required": ["CLERK_SECRET_KEY", "DATABASE_URL"]
   }
 }

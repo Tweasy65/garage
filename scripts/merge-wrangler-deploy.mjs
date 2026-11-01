@@ -35,6 +35,21 @@ if (rootVars && typeof rootVars === 'object' && !Array.isArray(rootVars)) {
   dist.vars = { ...(dist.vars ?? {}), ...rootVars }
 }
 
+const publishableKey =
+  process.env.VITE_CLERK_PUBLISHABLE_KEY?.trim() ||
+  process.env.CLERK_PUBLISHABLE_KEY?.trim()
+if (publishableKey) {
+  dist.vars = {
+    ...(dist.vars ?? {}),
+    CLERK_PUBLISHABLE_KEY: publishableKey,
+    VITE_CLERK_PUBLISHABLE_KEY: publishableKey,
+  }
+}
+
+if (root.secrets !== undefined) {
+  dist.secrets = root.secrets
+}
+
 for (const key of [
   'routes',
   'workers_dev',

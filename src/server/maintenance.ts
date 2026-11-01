@@ -1,27 +1,11 @@
-import { auth } from '@clerk/tanstack-react-start/server'
 import { createServerFn } from '@tanstack/react-start'
 import { and, eq } from 'drizzle-orm'
 
 import { db } from '@/db'
 import { maintenanceRecords, vehicles } from '@/db/schema'
 import type { MaintenanceInput } from '@/lib/vehicleTypes'
-
-async function requireUserId(): Promise<string> {
-  const { userId } = await auth()
-  if (!userId) throw new Error('Sign in to manage maintenance records')
-  return userId
-}
-
-async function assertVehicleOwner(vehicleId: string, userId: string) {
-  const [vehicle] = await db
-    .select({ id: vehicles.id, mileage: vehicles.mileage })
-    .from(vehicles)
-    .where(and(eq(vehicles.id, vehicleId), eq(vehicles.userId, userId)))
-    .limit(1)
-
-  if (!vehicle) throw new Error('Vehicle not found')
-  return vehicle
-}
+import { assertVehicleOwner, requireUserId } from '@/server/auth'
+import { mapMaintenance } from '@/server/mappers'
 
 function normalizeMaintenanceInput(data: MaintenanceInput) {
   const type = data.type.trim()
@@ -45,7 +29,7 @@ function normalizeMaintenanceInput(data: MaintenanceInput) {
 export const addMaintenanceRecord = createServerFn({ method: 'POST' })
   .inputValidator((data: MaintenanceInput) => data)
   .handler(async ({ data }) => {
-    const userId = await requireUserId()
+    const userId = await requireUserId('Sign in to manage maintenance records')
     const values = normalizeMaintenanceInput(data)
     const vehicle = await assertVehicleOwner(values.vehicleId, userId)
 
@@ -67,26 +51,13 @@ export const addMaintenanceRecord = createServerFn({ method: 'POST' })
       })
       .where(eq(vehicles.id, values.vehicleId))
 
-    return {
-      record: {
-        id: row.id,
-        vehicleId: row.vehicleId,
-        date: row.date.toISOString(),
-        type: row.type,
-        description: row.description,
-        costCents: row.costCents,
-        mileage: row.mileage,
-        serviceProvider: row.serviceProvider,
-        nextDueDate: row.nextDueDate?.toISOString() ?? null,
-        nextDueMileage: row.nextDueMileage,
-      },
-    }
+    return { record: mapMaintenance(row) }
   })
 
 export const updateMaintenanceRecord = createServerFn({ method: 'POST' })
   .inputValidator((data: MaintenanceInput & { id: string }) => data)
   .handler(async ({ data }) => {
-    const userId = await requireUserId()
+    const userId = await requireUserId('Sign in to manage maintenance records')
     const values = normalizeMaintenanceInput(data)
     const vehicle = await assertVehicleOwner(values.vehicleId, userId)
 
@@ -116,26 +87,13 @@ export const updateMaintenanceRecord = createServerFn({ method: 'POST' })
       })
       .where(eq(vehicles.id, values.vehicleId))
 
-    return {
-      record: {
-        id: row.id,
-        vehicleId: row.vehicleId,
-        date: row.date.toISOString(),
-        type: row.type,
-        description: row.description,
-        costCents: row.costCents,
-        mileage: row.mileage,
-        serviceProvider: row.serviceProvider,
-        nextDueDate: row.nextDueDate?.toISOString() ?? null,
-        nextDueMileage: row.nextDueMileage,
-      },
-    }
+    return { record: mapMaintenance(row) }
   })
 
 export const deleteMaintenanceRecord = createServerFn({ method: 'POST' })
   .inputValidator((data: { id: string }) => data)
   .handler(async ({ data }) => {
-    const userId = await requireUserId()
+    const userId = await requireUserId('Sign in to manage maintenance records')
 
     const [row] = await db
       .delete(maintenanceRecords)

@@ -1,4 +1,3 @@
-import { auth } from '@clerk/tanstack-react-start/server'
 import { createServerFn } from '@tanstack/react-start'
 import { and, asc, desc, eq } from 'drizzle-orm'
 
@@ -12,37 +11,14 @@ import type {
   ProjectBoard,
   ProjectItem,
   ProjectItemInput,
-  VehicleSummary,
 } from '@/lib/vehicleTypes'
-
-async function requireUserId(): Promise<string> {
-  const { userId } = await auth()
-  if (!userId) throw new Error('Sign in to manage project lists')
-  return userId
-}
-
-async function assertVehicleOwner(vehicleId: string, userId: string) {
-  const [vehicle] = await db
-    .select({
-      id: vehicles.id,
-      make: vehicles.make,
-      model: vehicles.model,
-      trim: vehicles.trim,
-      year: vehicles.year,
-      color: vehicles.color,
-      mileage: vehicles.mileage,
-      isProject: vehicles.isProject,
-      isFavorite: vehicles.isFavorite,
-      imageUrl: vehicles.imageUrl,
-      tags: vehicles.tags,
-    })
-    .from(vehicles)
-    .where(and(eq(vehicles.id, vehicleId), eq(vehicles.userId, userId)))
-    .limit(1)
-
-  if (!vehicle) throw new Error('Vehicle not found')
-  return vehicle
-}
+import {
+  assertVehicleOwner,
+  optionalUserId,
+  ownedVehicleSummaryColumns,
+  requireUserId,
+} from '@/server/auth'
+import { mapVehicleSummary } from '@/server/mappers'
 
 function mapProjectItem(row: typeof projectItems.$inferSelect): ProjectItem {
   return {
@@ -60,11 +36,19 @@ function mapProjectItem(row: typeof projectItems.$inferSelect): ProjectItem {
   }
 }
 
-export async function loadProjectItems(vehicleId: string): Promise<ProjectItem[]> {
+export async function loadProjectItems(
+  vehicleId: string,
+  userId: string,
+): Promise<ProjectItem[]> {
   const rows = await db
     .select()
     .from(projectItems)
-    .where(eq(projectItems.vehicleId, vehicleId))
+    .where(
+      and(
+        eq(projectItems.vehicleId, vehicleId),
+        eq(projectItems.userId, userId),
+      ),
+    )
     .orderBy(asc(projectItems.sortOrder), asc(projectItems.createdAt))
 
   return rows.map(mapProjectItem)
@@ -96,46 +80,15 @@ async function nextSortOrder(
   return max + 10
 }
 
-function toSummary(
-  row: Awaited<ReturnType<typeof assertVehicleOwner>>,
-): VehicleSummary {
-  return {
-    id: row.id,
-    make: row.make,
-    model: row.model,
-    trim: row.trim,
-    year: row.year,
-    color: row.color,
-    mileage: row.mileage,
-    isProject: row.isProject,
-    isFavorite: row.isFavorite,
-    imageUrl: row.imageUrl,
-    tags: row.tags ?? [],
-    maintenanceCount: 0,
-  }
-}
-
 export const listProjectBoards = createServerFn({ method: 'GET' }).handler(
   async () => {
-    const { userId } = await auth()
+    const userId = await optionalUserId()
     if (!userId) {
       return { boards: [] as ProjectBoard[] }
     }
 
     const projectVehicles = await db
-      .select({
-        id: vehicles.id,
-        make: vehicles.make,
-        model: vehicles.model,
-        trim: vehicles.trim,
-        year: vehicles.year,
-        color: vehicles.color,
-        mileage: vehicles.mileage,
-        isProject: vehicles.isProject,
-        isFavorite: vehicles.isFavorite,
-        imageUrl: vehicles.imageUrl,
-        tags: vehicles.tags,
-      })
+      .select(ownedVehicleSummaryColumns)
       .from(vehicles)
       .where(and(eq(vehicles.userId, userId), eq(vehicles.isProject, true)))
       .orderBy(desc(vehicles.isFavorite), desc(vehicles.updatedAt))
@@ -158,7 +111,7 @@ export const listProjectBoards = createServerFn({ method: 'GET' }).handler(
 
     return {
       boards: projectVehicles.map((vehicle) => ({
-        vehicle: toSummary(vehicle),
+        vehicle: mapVehicleSummary(vehicle, 0),
         items: itemsByVehicle[vehicle.id] ?? [],
       })),
     }
@@ -168,7 +121,7 @@ export const listProjectBoards = createServerFn({ method: 'GET' }).handler(
 export const addProjectItem = createServerFn({ method: 'POST' })
   .inputValidator((data: ProjectItemInput) => data)
   .handler(async ({ data }) => {
-    const userId = await requireUserId()
+    const userId = await requireUserId('Sign in to manage project lists')
     const values = normalizeNewItem(data)
     await assertVehicleOwner(values.vehicleId, userId)
 
@@ -201,7 +154,7 @@ export const updateProjectItem = createServerFn({ method: 'POST' })
     }) => data,
   )
   .handler(async ({ data }) => {
-    const userId = await requireUserId()
+    const userId = await requireUserId('Sign in to manage project lists')
 
     const [existing] = await db
       .select()
@@ -247,7 +200,7 @@ export const updateProjectItem = createServerFn({ method: 'POST' })
 export const deleteProjectItem = createServerFn({ method: 'POST' })
   .inputValidator((data: { id: string }) => data)
   .handler(async ({ data }) => {
-    const userId = await requireUserId()
+    const userId = await requireUserId('Sign in to manage project lists')
 
     const [row] = await db
       .delete(projectItems)

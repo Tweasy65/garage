@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { execSync } from 'node:child_process'
 import { resolve } from 'node:path'
 
@@ -47,6 +47,14 @@ if (!existsSync(wranglerPath)) {
   } else {
     pass('nodejs_compat enabled')
   }
+  if (/\b(pk|sk)_(test|live)_/.test(raw)) {
+    fail(
+      'Clerk keys not committed',
+      'wrangler.jsonc must not contain Clerk publishable or secret keys; use GitHub/Worker secrets instead',
+    )
+  } else {
+    pass('No Clerk keys committed in wrangler.jsonc')
+  }
 }
 
 const pkg = JSON.parse(readFileSync(resolve(root, 'package.json'), 'utf8'))
@@ -56,10 +64,18 @@ if (!pkg.dependencies?.['@clerk/react']) {
   pass('@clerk/react declared (client build)')
 }
 
-for (const migration of ['0000_initial.sql', '0001_vehicle_assets.sql']) {
-  const path = resolve(root, 'drizzle', migration)
-  if (existsSync(path)) pass(`Migration file ${migration}`)
-  else fail(`Migration file ${migration}`, 'Missing from drizzle/')
+const drizzleDir = resolve(root, 'drizzle')
+const migrations = existsSync(drizzleDir)
+  ? readdirSync(drizzleDir)
+      .filter((name) => /^\d+_.*\.sql$/.test(name))
+      .sort()
+  : []
+if (migrations.length === 0) {
+  fail('Migration files', 'No numbered SQL files in drizzle/')
+} else {
+  for (const migration of migrations) {
+    pass(`Migration file ${migration}`)
+  }
 }
 
 if (!process.env.DATABASE_URL?.trim()) {

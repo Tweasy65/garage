@@ -8,6 +8,7 @@
     "predeploy:check": "node scripts/predeploy-check.mjs",
     "preview": "vite preview",
     "deploy": "vite build && node scripts/merge-wrangler-deploy.mjs && wrangler deploy --config dist/server/wrangler.json",
+    "typecheck": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node --no-warnings ./scripts/run-migrate.mjs",
     "db:studio": "drizzle-kit studio"

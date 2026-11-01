@@ -1,3 +1,7 @@
+import type { ProjectArea } from '@/db/schema'
+
+export type { ProjectArea }
+
 export type VehicleAssetKind = 'image' | 'model'
 
 export type VehicleAsset = {
@@ -92,13 +96,6 @@ export type VehicleDetail = VehicleSummary & {
   maintenance: MaintenanceRecord[]
   projectItems: ProjectItem[]
 }
-
-export type ProjectArea =
-  | 'engine'
-  | 'body'
-  | 'interior'
-  | 'electrical'
-  | 'misc'
 
 export type ProjectItem = {
   id: string

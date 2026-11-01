@@ -1,10 +1,10 @@
-import { Show } from '@clerk/tanstack-react-start'
 import { createFileRoute } from '@tanstack/react-router'
 
+import GarageAuthGate from '@/components/garage/GarageAuthGate'
 import ServicePage, {
   type ServiceFilters,
 } from '@/components/garage/ServicePage'
-import SignInLanding from '@/components/garage/SignInLanding'
+import { parseTruthyFlag } from '@/lib/searchParams'
 import { listService } from '@/server/vehicles'
 
 export const Route = createFileRoute('/service')({
@@ -12,10 +12,7 @@ export const Route = createFileRoute('/service')({
     status: parseStatus(search.status),
     vehicle: typeof search.vehicle === 'string' ? search.vehicle : undefined,
     type: typeof search.type === 'string' ? search.type : undefined,
-    log:
-      search.log === true || search.log === '1' || search.log === 'true'
-        ? true
-        : undefined,
+    log: parseTruthyFlag(search.log),
   }),
   loader: () => listService(),
   component: ServiceRoute,
@@ -25,19 +22,14 @@ function ServiceRoute() {
   const data = Route.useLoaderData()
   const filters = Route.useSearch()
   return (
-    <>
-      <Show when="signed-in">
-        <ServicePage
-          vehicles={data.vehicles}
-          alerts={data.alerts}
-          records={data.records}
-          filters={filters}
-        />
-      </Show>
-      <Show when="signed-out">
-        <SignInLanding />
-      </Show>
-    </>
+    <GarageAuthGate>
+      <ServicePage
+        vehicles={data.vehicles}
+        alerts={data.alerts}
+        records={data.records}
+        filters={filters}
+      />
+    </GarageAuthGate>
   )
 }
 

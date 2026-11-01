@@ -1,6 +1,7 @@
 import { createServerFn } from '@tanstack/react-start'
 
 import type { StockImage } from '@/lib/vehicleTypes'
+import { requireUserId } from '@/server/auth'
 
 type WikimediaPage = {
   title?: string
@@ -15,6 +16,7 @@ type WikimediaPage = {
 export const searchStockImages = createServerFn({ method: 'GET' })
   .inputValidator((data: { query: string }) => data)
   .handler(async ({ data }): Promise<{ images: StockImage[] }> => {
+    await requireUserId()
     const query = data.query.trim()
     if (query.length < 2) return { images: [] }
 
