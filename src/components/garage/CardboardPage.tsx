@@ -58,7 +58,7 @@ export default function CardboardPage({ vehicle }: { vehicle: VehicleDetail }) {
   }
 
   return (
-    <div className="cardboard-stage min-h-[calc(100vh-4.25rem)] px-4 py-8 md:px-8 md:py-12">
+    <div className="cardboard-stage min-h-[calc(100vh-4.25rem)] px-4 py-8 pb-[calc(5.5rem+env(safe-area-inset-bottom))] md:px-8 md:py-12 sm:pb-12">
       <div className="mx-auto flex max-w-3xl items-center justify-between gap-3">
         <Link
           to="/vehicles/$vehicleId"

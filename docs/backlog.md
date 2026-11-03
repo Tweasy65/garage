@@ -13,7 +13,7 @@ Check a task `[x]` and set its status when it ships. Leave epic status `todo` un
 
 | ID | Epic | Priority | Status | Why |
 | --- | --- | --- | --- | --- |
-| E1 | Phone navigation | P0 | todo | Header hides Collection / Projects / Service below `sm` |
+| E1 | Phone navigation | P0 | doing | Header hides Collection / Projects / Service below `sm` |
 | E2 | Collection as inventory | P0 | todo | Home is a picker, not a searchable garage |
 | E3 | Quieter, honest alerts | P0 | todo | “Missing first log” is treated like a due item |
 | E4 | Reminders outside the browser | P1 | todo | Alerts only recompute on load; no email/push/cron |
@@ -28,8 +28,8 @@ Check a task `[x]` and set its status when it ships. Leave epic status `todo` un
 
 **Goal:** A signed-in phone user can reach Collection, Projects, and Service without knowing the URLs.
 
-- [ ] **E1.T1** · P0 · todo — Show Collection / Projects / Service on small screens (overflow menu, bottom bar, or always-visible links). Today `Header` nav is `hidden … sm:flex`.
-- [ ] **E1.T2** · P1 · todo — Make Add vehicle, alerts, and account controls usable in the same compact header without wrapping or clipping.
+- [x] **E1.T1** · P0 · done — Show Collection / Projects / Service on small screens (overflow menu, bottom bar, or always-visible links). Today `Header` nav is `hidden … sm:flex`.
+- [x] **E1.T2** · P1 · done — Make Add vehicle, alerts, and account controls usable in the same compact header without wrapping or clipping.
 - [ ] **E1.T3** · P2 · todo — Spot-check collection preview, vehicle tabs, service filters, and cardboard on a ~390px viewport and fix the worst overflow.
 
 ---
