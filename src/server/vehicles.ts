@@ -343,6 +343,21 @@ export const updateVehicleMileage = createServerFn({ method: 'POST' })
     return { vehicle: await loadVehicleDetailForUser(row.id, userId) }
   })
 
+export const setVehicleFavorite = createServerFn({ method: 'POST' })
+  .inputValidator((data: { id: string; isFavorite: boolean }) => data)
+  .handler(async ({ data }) => {
+    const userId = await requireUserId()
+
+    const [row] = await db
+      .update(vehicles)
+      .set({ isFavorite: data.isFavorite, updatedAt: new Date() })
+      .where(and(eq(vehicles.id, data.id), eq(vehicles.userId, userId)))
+      .returning({ id: vehicles.id, isFavorite: vehicles.isFavorite })
+
+    if (!row) throw new Error('Vehicle not found')
+    return row
+  })
+
 const COVER_FROM_MODEL_NAME = '3D studio cover'
 
 export const addVehicleCoverFromModel = createServerFn({ method: 'POST' })

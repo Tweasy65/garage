@@ -39,7 +39,7 @@ Check a task `[x]` and set its status when it ships. Leave epic status `todo` un
 **Goal:** Find a vehicle without scanning a long list. Tags and favorites should do work, not just display.
 
 - [x] **E2.T1** · P0 · done — Filter/search the collection by year, make, model, tag, project flag, and favorite.
-- [ ] **E2.T2** · P1 · todo — Toggle favorite from the collection list (today it is only a checkbox in the edit form).
+- [x] **E2.T2** · P1 · done — Toggle favorite from the collection list (today it is only a checkbox in the edit form).
 - [ ] **E2.T3** · P1 · todo — Clicking a collection row (or a clear “Open”) should go to the vehicle page; keep the preview, but stop treating the list as the only destination.
 - [ ] **E2.T4** · P2 · todo — Sort options beyond favorites-first / recently updated (year, mileage, make).
 - [x] **E2.T5** · P2 · done — Use tags as collection chips/filters. They are stored and suggested in the form, then only shown on the specs tab.

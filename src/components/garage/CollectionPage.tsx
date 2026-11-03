@@ -21,7 +21,7 @@ import {
   type MaintenanceAlert,
 } from '@/lib/maintenanceAlerts'
 import type { VehicleDetail, VehicleInput, VehicleSummary } from '@/lib/vehicleTypes'
-import { createVehicle, getVehicle } from '@/server/vehicles'
+import { createVehicle, getVehicle, setVehicleFavorite } from '@/server/vehicles'
 
 type CollectionPageProps = {
   vehicles: VehicleSummary[]
@@ -70,6 +70,13 @@ export default function CollectionPage({
         setDetails((prev) => ({ ...prev, [id]: 'failed' }))
       })
   }, [selectedId, details])
+
+  async function toggleFavorite(vehicle: VehicleSummary) {
+    await setVehicleFavorite({
+      data: { id: vehicle.id, isFavorite: !vehicle.isFavorite },
+    })
+    await router.invalidate()
+  }
 
   async function handleCreate(values: VehicleInput) {
     const { vehicle } = await createVehicle({ data: values })
@@ -177,37 +184,55 @@ export default function CollectionPage({
                 const active = vehicle.id === selectedSummary?.id
                 return (
                   <li key={vehicle.id}>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedId(vehicle.id)}
-                      aria-pressed={active}
-                      className={`flex w-full items-center gap-3 border-l-2 p-3 text-left transition ${
+                    <div
+                      className={`flex items-center gap-3 border-l-2 p-3 transition ${
                         active
                           ? 'border-garage-accent bg-white/5'
                           : 'border-transparent hover:bg-white/5'
                       }`}
                     >
-                      <VehicleThumb
-                        src={vehicle.imageUrl}
-                        alt=""
-                        className="size-14 shrink-0 rounded-sm"
-                      />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedId(vehicle.id)}
+                        aria-pressed={active}
+                        className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                      >
+                        <VehicleThumb
+                          src={vehicle.imageUrl}
+                          alt=""
+                          className="size-14 shrink-0 rounded-sm"
+                        />
+                        <div className="min-w-0 flex-1">
                           <p className="truncate font-medium">
                             {vehicle.year} {vehicle.make} {vehicle.model}
                           </p>
-                          {vehicle.isFavorite ? (
-                            <Star className="size-3 shrink-0 fill-garage-accent text-garage-accent" />
-                          ) : null}
+                          <p className="truncate text-sm text-garage-muted">
+                            {formatMiles(vehicle.mileage)}
+                            {vehicle.color ? ` · ${vehicle.color}` : ''}
+                            {vehicle.isProject ? ' · Project' : ''}
+                          </p>
                         </div>
-                        <p className="truncate text-sm text-garage-muted">
-                          {formatMiles(vehicle.mileage)}
-                          {vehicle.color ? ` · ${vehicle.color}` : ''}
-                          {vehicle.isProject ? ' · Project' : ''}
-                        </p>
-                      </div>
-                    </button>
+                      </button>
+                      <button
+                        type="button"
+                        className="shrink-0 rounded-sm p-2 text-garage-muted hover:bg-white/10 hover:text-garage-text"
+                        aria-label={
+                          vehicle.isFavorite
+                            ? `Remove ${vehicle.make} ${vehicle.model} from favorites`
+                            : `Favorite ${vehicle.make} ${vehicle.model}`
+                        }
+                        aria-pressed={vehicle.isFavorite}
+                        onClick={() => void toggleFavorite(vehicle)}
+                      >
+                        <Star
+                          className={`size-4 ${
+                            vehicle.isFavorite
+                              ? 'fill-garage-accent text-garage-accent'
+                              : ''
+                          }`}
+                        />
+                      </button>
+                    </div>
                   </li>
                 )
               })}
