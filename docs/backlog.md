@@ -15,7 +15,7 @@ Check a task `[x]` and set its status when it ships. Leave epic status `todo` un
 | --- | --- | --- | --- | --- |
 | E1 | Phone navigation | P0 | doing | Header hides Collection / Projects / Service below `sm` |
 | E2 | Collection as inventory | P0 | todo | Home is a picker, not a searchable garage |
-| E3 | Quieter, honest alerts | P0 | todo | “Missing first log” is treated like a due item |
+| E3 | Quieter, honest alerts | P0 | doing | “Missing first log” is treated like a due item |
 | E4 | Reminders outside the browser | P1 | todo | Alerts only recompute on load; no email/push/cron |
 | E5 | Media that scales | P1 | todo | Photos and GLBs live as data URLs in Postgres |
 | E6 | Punch-list depth | P1 | todo | `sortOrder` and instructions exist; reorder and markdown do not |
@@ -52,9 +52,9 @@ Check a task `[x]` and set its status when it ships. Leave epic status `todo` un
 
 See also `docs/maintenance-schedule.md`.
 
-- [ ] **E3.T1** · P0 · todo — Stop counting “no oil/tires/inspection on record” as an alert badge. Keep a softer empty state on the vehicle service tab / service hub instead.
+- [x] **E3.T1** · P0 · done — Stop counting “no oil/tires/inspection on record” as an alert badge. Keep a softer empty state on the vehicle service tab / service hub instead.
 - [ ] **E3.T2** · P1 · todo — Per-vehicle interval overrides (classic vs daily driver) instead of one 5k/180-day oil rule for every car.
-- [ ] **E3.T3** · P1 · todo — Recompute alerts when odometer is updated and a mileage due is crossed (hero mileage save already exists).
+- [x] **E3.T3** · P1 · done — Recompute alerts when odometer is updated and a mileage due is crossed (hero mileage save already exists).
 - [ ] **E3.T4** · P2 · todo — Deduplicate header alerts vs loader data (`GarageAlertsProvider` refetches `listMaintenanceAlerts` on every route load even when the page already has alerts).
 - [ ] **E3.T5** · P2 · todo — Dismiss / snooze an alert without logging fake service.
 

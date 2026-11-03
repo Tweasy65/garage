@@ -10,11 +10,15 @@ import {
   type ReactNode,
 } from 'react'
 
-import type { MaintenanceAlert } from '@/lib/maintenanceAlerts'
+import {
+  actionableAlerts,
+  type MaintenanceAlert,
+} from '@/lib/maintenanceAlerts'
 import { listMaintenanceAlerts } from '@/server/vehicles'
 
 type GarageAlertsContextValue = {
   alerts: MaintenanceAlert[]
+  openAlerts: MaintenanceAlert[]
   openCount: number
   refreshAlerts: () => Promise<void>
 }
@@ -51,11 +55,12 @@ export function GarageAlertsProvider({ children }: { children: ReactNode }) {
     })
   }, [router, userId, refreshAlerts])
 
-  const openCount = alerts.length
+  const openAlerts = useMemo(() => actionableAlerts(alerts), [alerts])
+  const openCount = openAlerts.length
 
   const value = useMemo(
-    () => ({ alerts, openCount, refreshAlerts }),
-    [alerts, openCount, refreshAlerts],
+    () => ({ alerts, openAlerts, openCount, refreshAlerts }),
+    [alerts, openAlerts, openCount, refreshAlerts],
   )
 
   return (

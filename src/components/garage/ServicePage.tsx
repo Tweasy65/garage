@@ -29,7 +29,7 @@ const STATUS_OPTIONS = [
   { value: 'all', label: 'All' },
   { value: 'overdue', label: 'Overdue' },
   { value: 'due-soon', label: 'Due soon' },
-  { value: 'missing', label: 'Missing' },
+  { value: 'missing', label: 'Needs first log' },
   { value: 'recent', label: `Recent (${RECENT_DAYS} days)` },
   { value: 'history', label: 'History' },
 ] as const
@@ -238,7 +238,11 @@ export default function ServicePage({
                   <MaintenanceAlertRows
                     alerts={filteredAlerts}
                     linkToVehicleService
-                    emptyMessage="No alerts for this filter."
+                    emptyMessage={
+                      status === 'missing'
+                        ? 'Every tracked interval has a first log.'
+                        : 'No alerts for this filter.'
+                    }
                   />
                 </section>
               ) : null}

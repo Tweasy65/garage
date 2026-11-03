@@ -7,7 +7,10 @@ import { useGarageAlerts } from '@/components/garage/garageAlertsContext'
 import VehicleModelCanvas from '@/components/garage/VehicleModelCanvas'
 import VehicleThumb from '@/components/garage/VehicleThumb'
 import { paintColorFromName, specForVehicle } from '@/data/vehicleModels'
-import { computeMaintenanceAlerts } from '@/lib/maintenanceAlerts'
+import {
+  actionableAlerts,
+  computeMaintenanceAlerts,
+} from '@/lib/maintenanceAlerts'
 import { formatMiles } from '@/lib/format'
 import type { VehicleDetail } from '@/lib/vehicleTypes'
 import { updateVehicleMileage } from '@/server/vehicles'
@@ -44,9 +47,11 @@ export default function VehicleHero({
       tags: vehicle.tags,
       maintenanceCount: vehicle.maintenance.length,
     }
-    const alerts = computeMaintenanceAlerts(
-      [summary],
-      { [vehicle.id]: vehicle.maintenance },
+    const alerts = actionableAlerts(
+      computeMaintenanceAlerts(
+        [summary],
+        { [vehicle.id]: vehicle.maintenance },
+      ),
     )
     return alerts[0] ?? null
   }, [vehicle])
@@ -56,9 +61,7 @@ export default function VehicleHero({
       ? 'Service overdue'
       : serviceStatus?.severity === 'due-soon'
         ? 'Due soon'
-        : serviceStatus?.severity === 'missing'
-          ? 'Needs first log'
-          : null
+        : null
 
   const statusClass =
     serviceStatus?.severity === 'overdue'

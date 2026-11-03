@@ -12,7 +12,7 @@ function formatBadgeCount(count: number) {
 
 export default function GarageAlertsMenu() {
   const panelId = useId()
-  const { alerts, openCount } = useGarageAlerts()
+  const { openAlerts, openCount } = useGarageAlerts()
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
 
@@ -77,7 +77,7 @@ export default function GarageAlertsMenu() {
             </div>
             <div className="garage-alerts-menu-scroll mt-3">
               <MaintenanceAlertRows
-                alerts={alerts}
+                alerts={openAlerts}
                 linkToVehicleService
                 onNavigate={() => setOpen(false)}
                 emptyMessage="Nothing due — service looks current."

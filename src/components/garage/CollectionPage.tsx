@@ -11,7 +11,10 @@ import VehiclePreview from '@/components/garage/VehiclePreview'
 import VehicleThumb from '@/components/garage/VehicleThumb'
 import { FEATURED_MODEL, paintColorFromName } from '@/data/vehicleModels'
 import { formatMiles } from '@/lib/format'
-import type { MaintenanceAlert } from '@/lib/maintenanceAlerts'
+import {
+  actionableAlerts,
+  type MaintenanceAlert,
+} from '@/lib/maintenanceAlerts'
 import type { VehicleDetail, VehicleInput, VehicleSummary } from '@/lib/vehicleTypes'
 import { createVehicle, getVehicle } from '@/server/vehicles'
 
@@ -207,16 +210,15 @@ function AddVehicleModal({
 }
 
 function ServiceSummary({ alerts }: { alerts: MaintenanceAlert[] }) {
-  const overdue = alerts.filter((alert) => alert.severity === 'overdue').length
-  const dueSoon = alerts.filter((alert) => alert.severity === 'due-soon').length
+  const due = actionableAlerts(alerts)
+  const overdue = due.filter((alert) => alert.severity === 'overdue').length
+  const dueSoon = due.filter((alert) => alert.severity === 'due-soon').length
   const summary =
     overdue || dueSoon
       ? [overdue ? `${overdue} overdue` : null, dueSoon ? `${dueSoon} due soon` : null]
           .filter(Boolean)
           .join(' · ')
-      : alerts.length
-        ? `${alerts.length} items to review`
-        : 'Service is current'
+      : 'Service is current'
 
   return (
     <Link

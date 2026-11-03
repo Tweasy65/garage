@@ -9,9 +9,9 @@ Garage evaluates due items whenever the signed-in home page loads. There is no b
    - Oil change — 5,000 miles or 180 days
    - Tire rotation — 7,500 miles or 365 days
    - Inspection — 365 days
-3. **Missing records** — if a vehicle has never logged an oil change, we surface that so the clock can start.
+3. **Missing first log** — if a vehicle has never logged oil, tires, or inspection, the service tab (and the “Needs first log” filter) mention it so the clock can start. That is **not** an overdue badge.
 
-“Due soon” is the last 500 miles or 30 days of an interval. Overdue wins over due-soon for the same service.
+“Due soon” is the last 500 miles or 30 days of an interval. Overdue wins over due-soon for the same service. The header bell and collection summary only count overdue and due-soon.
 
 ## How to keep this accurate
 

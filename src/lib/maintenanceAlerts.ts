@@ -230,3 +230,19 @@ export function computeMaintenanceAlerts(
   const rank = { overdue: 0, 'due-soon': 1, missing: 2 }
   return alerts.sort((a, b) => rank[a.severity] - rank[b.severity])
 }
+
+export function isActionableAlert(alert: MaintenanceAlert): boolean {
+  return alert.severity === 'overdue' || alert.severity === 'due-soon'
+}
+
+export function actionableAlerts(alerts: MaintenanceAlert[]): MaintenanceAlert[] {
+  return alerts.filter(isActionableAlert)
+}
+
+export function missingIntervalServices(
+  records: MaintenanceRecord[],
+): string[] {
+  return SERVICE_RULES.filter((rule) => !latestMatching(records, rule.match)).map(
+    (rule) => rule.title.toLowerCase(),
+  )
+}
