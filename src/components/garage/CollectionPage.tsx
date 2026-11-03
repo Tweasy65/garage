@@ -1,6 +1,6 @@
 import { Link, useRouter } from '@tanstack/react-router'
 import { CheckCircle2, Plus, Star } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import Drawer from '@/components/garage/Drawer'
 import { useGarageAlerts } from '@/components/garage/garageAlertsContext'
@@ -10,6 +10,11 @@ import VehicleModelCanvas from '@/components/garage/VehicleModelCanvas'
 import VehiclePreview from '@/components/garage/VehiclePreview'
 import VehicleThumb from '@/components/garage/VehicleThumb'
 import { FEATURED_MODEL, paintColorFromName } from '@/data/vehicleModels'
+import {
+  filterVehicles,
+  uniqueVehicleTags,
+  type CollectionFilters,
+} from '@/lib/collectionFilters'
 import { formatMiles } from '@/lib/format'
 import {
   actionableAlerts,
@@ -21,6 +26,8 @@ import { createVehicle, getVehicle } from '@/server/vehicles'
 type CollectionPageProps = {
   vehicles: VehicleSummary[]
   alerts: MaintenanceAlert[]
+  filters: CollectionFilters
+  onFiltersChange: (filters: CollectionFilters) => void
   addOpen: boolean
   onOpenAdd: () => void
   onCloseAdd: () => void
@@ -29,21 +36,28 @@ type CollectionPageProps = {
 export default function CollectionPage({
   vehicles,
   alerts,
+  filters,
+  onFiltersChange,
   addOpen,
   onOpenAdd,
   onCloseAdd,
 }: CollectionPageProps) {
   const router = useRouter()
   const { refreshAlerts } = useGarageAlerts()
+  const visible = useMemo(
+    () => filterVehicles(vehicles, filters),
+    [vehicles, filters],
+  )
+  const tags = useMemo(() => uniqueVehicleTags(vehicles), [vehicles])
   const [selectedId, setSelectedId] = useState<string | null>(
-    vehicles[0]?.id ?? null,
+    visible[0]?.id ?? vehicles[0]?.id ?? null,
   )
   const [details, setDetails] = useState<Record<string, VehicleDetail | 'failed'>>({})
 
   useEffect(() => {
-    if (selectedId && vehicles.some((vehicle) => vehicle.id === selectedId)) return
-    setSelectedId(vehicles[0]?.id ?? null)
-  }, [selectedId, vehicles])
+    if (selectedId && visible.some((vehicle) => vehicle.id === selectedId)) return
+    setSelectedId(visible[0]?.id ?? null)
+  }, [selectedId, visible])
 
   useEffect(() => {
     if (!selectedId || details[selectedId]) return
@@ -81,11 +95,16 @@ export default function CollectionPage({
   }
 
   const selectedSummary =
-    vehicles.find((vehicle) => vehicle.id === selectedId) ?? vehicles[0] ?? null
+    visible.find((vehicle) => vehicle.id === selectedId) ?? visible[0] ?? null
   const selectedDetail = selectedSummary ? details[selectedSummary.id] : undefined
   const previewVehicle =
     selectedDetail && selectedDetail !== 'failed' ? selectedDetail : selectedSummary
   const previewPending = selectedSummary != null && selectedDetail == null
+  const filtering =
+    Boolean(filters.query.trim()) ||
+    filters.favorite ||
+    filters.project ||
+    Boolean(filters.tag)
 
   return (
     <PageShell>
@@ -96,7 +115,9 @@ export default function CollectionPage({
             <div>
               <p className="label-caps">Inventory</p>
               <h2 className="mt-1 font-semibold">
-                {vehicles.length} vehicle{vehicles.length === 1 ? '' : 's'}
+                {filtering
+                  ? `${visible.length} of ${vehicles.length}`
+                  : `${vehicles.length} vehicle${vehicles.length === 1 ? '' : 's'}`}
               </h2>
             </div>
             <button type="button" onClick={onOpenAdd} className="btn">
@@ -104,46 +125,94 @@ export default function CollectionPage({
               Add vehicle
             </button>
           </div>
-          <ul className="divide-y divide-garage-border overflow-y-auto">
-            {vehicles.map((vehicle) => {
-              const active = vehicle.id === selectedSummary?.id
-              return (
-                <li key={vehicle.id}>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedId(vehicle.id)}
-                    aria-pressed={active}
-                    className={`flex w-full items-center gap-3 border-l-2 p-3 text-left transition ${
-                      active
-                        ? 'border-garage-accent bg-white/5'
-                        : 'border-transparent hover:bg-white/5'
-                    }`}
-                  >
-                    <VehicleThumb
-                      src={vehicle.imageUrl}
-                      alt=""
-                      className="size-14 shrink-0 rounded-sm"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="truncate font-medium">
-                          {vehicle.year} {vehicle.make} {vehicle.model}
+          <div className="space-y-3 border-b border-garage-border p-4">
+            <label className="block">
+              <span className="sr-only">Search collection</span>
+              <input
+                className="field"
+                value={filters.query}
+                onChange={(event) =>
+                  onFiltersChange({ ...filters, query: event.target.value })
+                }
+                placeholder="Search year, make, model, tag…"
+              />
+            </label>
+            <div className="flex flex-wrap gap-2">
+              <FilterChip
+                label="Favorites"
+                active={filters.favorite}
+                onClick={() =>
+                  onFiltersChange({ ...filters, favorite: !filters.favorite })
+                }
+              />
+              <FilterChip
+                label="Projects"
+                active={filters.project}
+                onClick={() =>
+                  onFiltersChange({ ...filters, project: !filters.project })
+                }
+              />
+              {tags.map((tag) => (
+                <FilterChip
+                  key={tag}
+                  label={tag}
+                  active={filters.tag === tag}
+                  onClick={() =>
+                    onFiltersChange({
+                      ...filters,
+                      tag: filters.tag === tag ? undefined : tag,
+                    })
+                  }
+                />
+              ))}
+            </div>
+          </div>
+          {visible.length === 0 ? (
+            <p className="p-4 text-sm text-garage-muted">
+              No vehicles match this search.
+            </p>
+          ) : (
+            <ul className="divide-y divide-garage-border overflow-y-auto">
+              {visible.map((vehicle) => {
+                const active = vehicle.id === selectedSummary?.id
+                return (
+                  <li key={vehicle.id}>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedId(vehicle.id)}
+                      aria-pressed={active}
+                      className={`flex w-full items-center gap-3 border-l-2 p-3 text-left transition ${
+                        active
+                          ? 'border-garage-accent bg-white/5'
+                          : 'border-transparent hover:bg-white/5'
+                      }`}
+                    >
+                      <VehicleThumb
+                        src={vehicle.imageUrl}
+                        alt=""
+                        className="size-14 shrink-0 rounded-sm"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="truncate font-medium">
+                            {vehicle.year} {vehicle.make} {vehicle.model}
+                          </p>
+                          {vehicle.isFavorite ? (
+                            <Star className="size-3 shrink-0 fill-garage-accent text-garage-accent" />
+                          ) : null}
+                        </div>
+                        <p className="truncate text-sm text-garage-muted">
+                          {formatMiles(vehicle.mileage)}
+                          {vehicle.color ? ` · ${vehicle.color}` : ''}
+                          {vehicle.isProject ? ' · Project' : ''}
                         </p>
-                        {vehicle.isFavorite ? (
-                          <Star className="size-3 shrink-0 fill-garage-accent text-garage-accent" />
-                        ) : null}
                       </div>
-                      <p className="truncate text-sm text-garage-muted">
-                        {formatMiles(vehicle.mileage)}
-                        {vehicle.color ? ` · ${vehicle.color}` : ''}
-                        {vehicle.isProject ? ' · Project' : ''}
-                      </p>
-                    </div>
-                  </button>
-                </li>
-              )
-            })}
-          </ul>
+                    </button>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
         </section>
         <VehiclePreview
           vehicle={previewVehicle}
@@ -206,6 +275,27 @@ function AddVehicleModal({
         onCancel={onClose}
       />
     </Drawer>
+  )
+}
+
+function FilterChip({
+  label,
+  active,
+  onClick,
+}: {
+  label: string
+  active: boolean
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`badge ${active ? 'border-garage-accent text-garage-text' : ''}`}
+    >
+      {label}
+    </button>
   )
 }
 
