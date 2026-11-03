@@ -13,7 +13,7 @@ Check a task `[x]` and set its status when it ships. Leave epic status `todo` un
 
 | ID | Epic | Priority | Status | Why |
 | --- | --- | --- | --- | --- |
-| E1 | Phone navigation | P0 | doing | Header hides Collection / Projects / Service below `sm` |
+| E1 | Phone navigation | P0 | done | Header hides Collection / Projects / Service below `sm` |
 | E2 | Collection as inventory | P0 | done | Home is a picker, not a searchable garage |
 | E3 | Quieter, honest alerts | P0 | doing | “Missing first log” is treated like a due item |
 | E4 | Reminders outside the browser | P1 | todo | Alerts only recompute on load; no email/push/cron |
