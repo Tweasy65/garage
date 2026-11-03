@@ -195,24 +195,40 @@ export default function CollectionPage({
                         type="button"
                         onClick={() => setSelectedId(vehicle.id)}
                         aria-pressed={active}
-                        className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                        aria-label={`Preview ${vehicle.year} ${vehicle.make} ${vehicle.model}`}
+                        className="shrink-0"
                       >
                         <VehicleThumb
                           src={vehicle.imageUrl}
                           alt=""
-                          className="size-14 shrink-0 rounded-sm"
+                          className="size-14 rounded-sm"
                         />
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate font-medium">
-                            {vehicle.year} {vehicle.make} {vehicle.model}
-                          </p>
-                          <p className="truncate text-sm text-garage-muted">
-                            {formatMiles(vehicle.mileage)}
-                            {vehicle.color ? ` · ${vehicle.color}` : ''}
-                            {vehicle.isProject ? ' · Project' : ''}
-                          </p>
-                        </div>
                       </button>
+                      <div className="min-w-0 flex-1">
+                        <Link
+                          to="/vehicles/$vehicleId"
+                          params={{ vehicleId: vehicle.id }}
+                          className="block truncate font-medium hover:text-white"
+                        >
+                          {vehicle.year} {vehicle.make} {vehicle.model}
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedId(vehicle.id)}
+                          className="block w-full truncate text-left text-sm text-garage-muted"
+                        >
+                          {formatMiles(vehicle.mileage)}
+                          {vehicle.color ? ` · ${vehicle.color}` : ''}
+                          {vehicle.isProject ? ' · Project' : ''}
+                        </button>
+                      </div>
+                      <Link
+                        to="/vehicles/$vehicleId"
+                        params={{ vehicleId: vehicle.id }}
+                        className="btn hidden shrink-0 px-2 text-xs sm:inline-flex"
+                      >
+                        Open
+                      </Link>
                       <button
                         type="button"
                         className="shrink-0 rounded-sm p-2 text-garage-muted hover:bg-white/10 hover:text-garage-text"

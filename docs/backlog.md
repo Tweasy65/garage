@@ -14,7 +14,7 @@ Check a task `[x]` and set its status when it ships. Leave epic status `todo` un
 | ID | Epic | Priority | Status | Why |
 | --- | --- | --- | --- | --- |
 | E1 | Phone navigation | P0 | doing | Header hides Collection / Projects / Service below `sm` |
-| E2 | Collection as inventory | P0 | doing | Home is a picker, not a searchable garage |
+| E2 | Collection as inventory | P0 | done | Home is a picker, not a searchable garage |
 | E3 | Quieter, honest alerts | P0 | doing | “Missing first log” is treated like a due item |
 | E4 | Reminders outside the browser | P1 | todo | Alerts only recompute on load; no email/push/cron |
 | E5 | Media that scales | P1 | todo | Photos and GLBs live as data URLs in Postgres |
@@ -40,7 +40,7 @@ Check a task `[x]` and set its status when it ships. Leave epic status `todo` un
 
 - [x] **E2.T1** · P0 · done — Filter/search the collection by year, make, model, tag, project flag, and favorite.
 - [x] **E2.T2** · P1 · done — Toggle favorite from the collection list (today it is only a checkbox in the edit form).
-- [ ] **E2.T3** · P1 · todo — Clicking a collection row (or a clear “Open”) should go to the vehicle page; keep the preview, but stop treating the list as the only destination.
+- [x] **E2.T3** · P1 · done — Clicking a collection row (or a clear “Open”) should go to the vehicle page; keep the preview, but stop treating the list as the only destination.
 - [ ] **E2.T4** · P2 · todo — Sort options beyond favorites-first / recently updated (year, mileage, make).
 - [x] **E2.T5** · P2 · done — Use tags as collection chips/filters. They are stored and suggested in the form, then only shown on the specs tab.
 
