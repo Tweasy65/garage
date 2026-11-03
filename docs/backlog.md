@@ -88,7 +88,7 @@ Planned in `src/lib/maintenanceAlerts.ts` and `docs/maintenance-schedule.md`.
 
 **Goal:** Project work can be ordered and read as instructions, not only as a checkbox plus textarea.
 
-- [ ] **E6.T1** · P1 · todo — Drag (or up/down) reorder; persist `sortOrder` (column already exists, only “append +10” is implemented).
+- [x] **E6.T1** · P1 · done — Drag (or up/down) reorder; persist `sortOrder` (column already exists, only “append +10” is implemented).
 - [ ] **E6.T2** · P1 · todo — Render `instructionsMd` as markdown in the detail drawer / cardboard, keep the editor as markdown or a simple split view.
 - [ ] **E6.T3** · P2 · todo — Cardboard: add/delete items without bouncing back to the punch-list tab (toggle and details already work there).
 - [ ] **E6.T4** · P2 · todo — Move an item between areas from the board without opening the drawer.

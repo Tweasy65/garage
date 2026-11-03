@@ -12,6 +12,7 @@ import type { ProjectBoard as ProjectBoardData } from '@/lib/vehicleTypes'
 import {
   addProjectItem,
   deleteProjectItem,
+  reorderProjectItems,
   updateProjectItem,
 } from '@/server/projectItems'
 
@@ -111,6 +112,13 @@ function ProjectVehicleCard({
     await onRefresh()
   }
 
+  async function handleReorder(orderedIds: string[]) {
+    await reorderProjectItems({
+      data: { vehicleId: board.vehicle.id, orderedIds },
+    })
+    await onRefresh()
+  }
+
   async function handleSaveDetails(
     id: string,
     values: {
@@ -169,6 +177,7 @@ function ProjectVehicleCard({
         onAdd={handleAdd}
         onToggle={handleToggle}
         onDelete={handleDelete}
+        onReorder={handleReorder}
         onSaveDetails={handleSaveDetails}
       />
     </section>

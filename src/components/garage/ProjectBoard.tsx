@@ -1,4 +1,4 @@
-import { Plus, Trash2 } from 'lucide-react'
+import { ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 
 import ProjectItemDetailDrawer from '@/components/garage/ProjectItemDetailDrawer'
@@ -31,6 +31,7 @@ type ProjectBoardProps = {
       area: ProjectArea
     },
   ) => Promise<void>
+  onReorder: (orderedIds: string[]) => Promise<void>
 }
 
 export default function ProjectBoard({
@@ -40,6 +41,7 @@ export default function ProjectBoard({
   onToggle,
   onDelete,
   onSaveDetails,
+  onReorder,
 }: ProjectBoardProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const selected = items.find((item) => item.id === selectedId) ?? null
@@ -51,7 +53,7 @@ export default function ProjectBoard({
           <p className="mb-3 text-sm text-garage-muted">Nothing on the list yet.</p>
         ) : (
           <ul className="space-y-1">
-            {sortProjectItems(items).map((item) => (
+            {sortProjectItems(items).map((item, index, list) => (
               <ProjectItemRow
                 key={item.id}
                 item={item}
@@ -59,6 +61,11 @@ export default function ProjectBoard({
                 onToggle={onToggle}
                 onDelete={onDelete}
                 onOpen={() => setSelectedId(item.id)}
+                canMoveUp={index > 0}
+                canMoveDown={index < list.length - 1}
+                onMove={(direction) =>
+                  void moveItem(list, index, direction, onReorder)
+                }
               />
             ))}
           </ul>
@@ -75,6 +82,7 @@ export default function ProjectBoard({
             onAdd={onAdd}
             onToggle={onToggle}
             onDelete={onDelete}
+            onReorder={onReorder}
             onOpen={(id) => setSelectedId(id)}
           />
         ))}
@@ -100,6 +108,7 @@ function ProjectAreaSection({
   onAdd,
   onToggle,
   onDelete,
+  onReorder,
   onOpen,
 }: {
   area: ProjectArea
@@ -107,6 +116,7 @@ function ProjectAreaSection({
   onAdd: ProjectBoardProps['onAdd']
   onToggle: ProjectBoardProps['onToggle']
   onDelete: ProjectBoardProps['onDelete']
+  onReorder: ProjectBoardProps['onReorder']
   onOpen: (id: string) => void
 }) {
   const openCount = items.filter((item) => !item.done).length
@@ -120,13 +130,18 @@ function ProjectAreaSection({
         </span>
       </div>
       <ul className="mt-3 space-y-1">
-        {items.map((item) => (
+        {items.map((item, index, list) => (
           <ProjectItemRow
             key={item.id}
             item={item}
             onToggle={onToggle}
             onDelete={onDelete}
             onOpen={() => onOpen(item.id)}
+            canMoveUp={index > 0}
+            canMoveDown={index < list.length - 1}
+            onMove={(direction) =>
+              void moveItem(list, index, direction, onReorder)
+            }
           />
         ))}
       </ul>
@@ -135,18 +150,39 @@ function ProjectAreaSection({
   )
 }
 
+function moveItem(
+  items: ProjectItem[],
+  index: number,
+  direction: -1 | 1,
+  onReorder: ProjectBoardProps['onReorder'],
+) {
+  const next = index + direction
+  if (next < 0 || next >= items.length) return
+  const ordered = items.map((item) => item.id)
+  const [moved] = ordered.splice(index, 1)
+  if (!moved) return
+  ordered.splice(next, 0, moved)
+  return onReorder(ordered)
+}
+
 function ProjectItemRow({
   item,
   showArea,
   onToggle,
   onDelete,
   onOpen,
+  canMoveUp,
+  canMoveDown,
+  onMove,
 }: {
   item: ProjectItem
   showArea?: boolean
   onToggle: ProjectBoardProps['onToggle']
   onDelete: ProjectBoardProps['onDelete']
   onOpen: () => void
+  canMoveUp: boolean
+  canMoveDown: boolean
+  onMove: (direction: -1 | 1) => void
 }) {
   const [pending, setPending] = useState(false)
 
@@ -207,15 +243,35 @@ function ProjectItemRow({
           </button>
         ) : null}
       </div>
-      <button
-        type="button"
-        className="mt-0.5 p-1 text-garage-muted opacity-100 transition hover:text-garage-text sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
-        onClick={() => void remove()}
-        disabled={pending}
-        aria-label={`Remove ${item.title}`}
-      >
-        <Trash2 className="size-3.5" />
-      </button>
+      <div className="mt-0.5 flex shrink-0 items-center">
+        <button
+          type="button"
+          className="p-1 text-garage-muted hover:text-garage-text disabled:opacity-30"
+          onClick={() => onMove(-1)}
+          disabled={pending || !canMoveUp}
+          aria-label={`Move ${item.title} up`}
+        >
+          <ChevronUp className="size-3.5" />
+        </button>
+        <button
+          type="button"
+          className="p-1 text-garage-muted hover:text-garage-text disabled:opacity-30"
+          onClick={() => onMove(1)}
+          disabled={pending || !canMoveDown}
+          aria-label={`Move ${item.title} down`}
+        >
+          <ChevronDown className="size-3.5" />
+        </button>
+        <button
+          type="button"
+          className="p-1 text-garage-muted opacity-100 transition hover:text-garage-text sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100"
+          onClick={() => void remove()}
+          disabled={pending}
+          aria-label={`Remove ${item.title}`}
+        >
+          <Trash2 className="size-3.5" />
+        </button>
+      </div>
     </li>
   )
 }

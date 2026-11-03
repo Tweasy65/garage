@@ -10,6 +10,7 @@ import type { VehicleDetail } from '@/lib/vehicleTypes'
 import {
   addProjectItem,
   deleteProjectItem,
+  reorderProjectItems,
   updateProjectItem,
 } from '@/server/projectItems'
 
@@ -44,6 +45,13 @@ export default function VehicleProjectTab({
 
   async function handleDelete(id: string) {
     await deleteProjectItem({ data: { id } })
+    await refresh()
+  }
+
+  async function handleReorder(orderedIds: string[]) {
+    await reorderProjectItems({
+      data: { vehicleId: vehicle.id, orderedIds },
+    })
     await refresh()
   }
 
@@ -87,6 +95,7 @@ export default function VehicleProjectTab({
         onAdd={handleAdd}
         onToggle={handleToggle}
         onDelete={handleDelete}
+        onReorder={handleReorder}
         onSaveDetails={handleSaveDetails}
       />
     </div>

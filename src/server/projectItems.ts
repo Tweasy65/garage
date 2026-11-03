@@ -197,6 +197,44 @@ export const updateProjectItem = createServerFn({ method: 'POST' })
     return { item: mapProjectItem(row) }
   })
 
+export const reorderProjectItems = createServerFn({ method: 'POST' })
+  .inputValidator((data: { vehicleId: string; orderedIds: string[] }) => {
+    const orderedIds = data.orderedIds.filter(
+      (id): id is string => typeof id === 'string' && id.length > 0,
+    )
+    if (!data.vehicleId) throw new Error('Vehicle is required')
+    return { vehicleId: data.vehicleId, orderedIds: [...new Set(orderedIds)] }
+  })
+  .handler(async ({ data }) => {
+    const userId = await requireUserId('Sign in to manage project lists')
+    await assertVehicleOwner(data.vehicleId, userId)
+
+    if (data.orderedIds.length === 0) return { ok: true }
+
+    const owned = await db
+      .select({ id: projectItems.id })
+      .from(projectItems)
+      .where(
+        and(
+          eq(projectItems.vehicleId, data.vehicleId),
+          eq(projectItems.userId, userId),
+        ),
+      )
+    const ownedIds = new Set(owned.map((row) => row.id))
+    if (data.orderedIds.some((id) => !ownedIds.has(id))) {
+      throw new Error('List item not found')
+    }
+
+    for (const [index, id] of data.orderedIds.entries()) {
+      await db
+        .update(projectItems)
+        .set({ sortOrder: (index + 1) * 10, updatedAt: new Date() })
+        .where(eq(projectItems.id, id))
+    }
+
+    return { ok: true }
+  })
+
 export const deleteProjectItem = createServerFn({ method: 'POST' })
   .inputValidator((data: { id: string }) => data)
   .handler(async ({ data }) => {
