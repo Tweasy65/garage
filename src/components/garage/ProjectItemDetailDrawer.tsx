@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import Drawer from '@/components/garage/Drawer'
+import MarkdownBody from '@/components/garage/MarkdownBody'
 import {
   PROJECT_AREA_LABELS,
   PROJECT_AREAS,
@@ -30,6 +31,9 @@ export default function ProjectItemDetailDrawer({
   const [notes, setNotes] = useState('')
   const [instructionsMd, setInstructionsMd] = useState('')
   const [area, setArea] = useState<ProjectArea>('misc')
+  const [instructionMode, setInstructionMode] = useState<'edit' | 'preview'>(
+    'preview',
+  )
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -39,6 +43,7 @@ export default function ProjectItemDetailDrawer({
     setNotes(item.notes ?? '')
     setInstructionsMd(item.instructionsMd ?? '')
     setArea(item.area)
+    setInstructionMode(item.instructionsMd?.trim() ? 'preview' : 'edit')
     setError(null)
   }, [item?.id, open])
 
@@ -106,18 +111,44 @@ export default function ProjectItemDetailDrawer({
               placeholder="One line on the cardboard"
             />
           </label>
-          <label className="block">
-            <span className="label-caps">Instructions</span>
-            <textarea
-              className="field mt-1.5 min-h-64 font-mono text-[13px] leading-relaxed"
-              value={instructionsMd}
-              onChange={(event) => setInstructionsMd(event.target.value)}
-              placeholder={'# Steps\n\n- Parts\n- Torque\n- Don’t forget'}
-            />
-            <span className="mt-1.5 block text-xs text-garage-muted">
-              Markdown is fine. This is the write-up behind the cardboard line.
-            </span>
-          </label>
+          <div className="block">
+            <div className="flex items-center justify-between gap-3">
+              <span className="label-caps">Instructions</span>
+              <div className="flex gap-1">
+                <button
+                  type="button"
+                  className={`px-2 py-1 text-xs ${instructionMode === 'edit' ? 'text-garage-text' : 'text-garage-muted'}`}
+                  onClick={() => setInstructionMode('edit')}
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  className={`px-2 py-1 text-xs ${instructionMode === 'preview' ? 'text-garage-text' : 'text-garage-muted'}`}
+                  onClick={() => setInstructionMode('preview')}
+                >
+                  Preview
+                </button>
+              </div>
+            </div>
+            {instructionMode === 'edit' ? (
+              <>
+                <textarea
+                  className="field mt-1.5 min-h-64 font-mono text-[13px] leading-relaxed"
+                  value={instructionsMd}
+                  onChange={(event) => setInstructionsMd(event.target.value)}
+                  placeholder={'# Steps\n\n- Parts\n- Torque\n- Don’t forget'}
+                />
+                <span className="mt-1.5 block text-xs text-garage-muted">
+                  Markdown is fine. This is the write-up behind the cardboard line.
+                </span>
+              </>
+            ) : (
+              <div className="mt-1.5 min-h-64 rounded-sm border border-garage-border bg-garage-panel-2 px-3 py-3">
+                <MarkdownBody source={instructionsMd} />
+              </div>
+            )}
+          </div>
           {error ? <p className="text-sm text-red-300">{error}</p> : null}
         </div>
         <div className="mt-auto flex flex-wrap gap-2 border-t border-garage-border px-5 py-4">

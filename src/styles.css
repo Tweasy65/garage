@@ -166,6 +166,44 @@
     @apply text-garage-muted line-through;
   }
 
+  .garage-md {
+    @apply space-y-2 text-sm leading-relaxed text-garage-text;
+  }
+
+  .garage-md h1,
+  .garage-md h2,
+  .garage-md h3 {
+    @apply font-semibold text-garage-text;
+  }
+
+  .garage-md h1 {
+    @apply text-lg;
+  }
+
+  .garage-md h2 {
+    @apply text-base;
+  }
+
+  .garage-md h3 {
+    @apply text-sm;
+  }
+
+  .garage-md ul {
+    @apply list-disc space-y-1 pl-5;
+  }
+
+  .garage-md a {
+    @apply underline hover:text-white;
+  }
+
+  .garage-md code {
+    @apply rounded-sm bg-garage-panel-2 px-1 font-mono text-[13px];
+  }
+
+  .garage-md p {
+    @apply m-0;
+  }
+
   .cardboard-stage {
     background:
       radial-gradient(ellipse at 50% 0%, #3a2a1c 0%, #15110e 55%, #0e0c0a 100%);

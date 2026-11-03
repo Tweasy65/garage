@@ -18,7 +18,7 @@ Check a task `[x]` and set its status when it ships. Leave epic status `todo` un
 | E3 | Quieter, honest alerts | P0 | doing | “Missing first log” is treated like a due item |
 | E4 | Reminders outside the browser | P1 | todo | Alerts only recompute on load; no email/push/cron |
 | E5 | Media that scales | P1 | todo | Photos and GLBs live as data URLs in Postgres |
-| E6 | Punch-list depth | P1 | todo | `sortOrder` and instructions exist; reorder and markdown do not |
+| E6 | Punch-list depth | P1 | done | `sortOrder` and instructions exist; reorder and markdown do not |
 | E7 | 3D catalog | P2 | todo | Viewer is polished for a handful of Fords |
 | E8 | Housekeeping | P2 | todo | Leftover cleanup that did not make the last pass |
 
@@ -89,7 +89,7 @@ Planned in `src/lib/maintenanceAlerts.ts` and `docs/maintenance-schedule.md`.
 **Goal:** Project work can be ordered and read as instructions, not only as a checkbox plus textarea.
 
 - [x] **E6.T1** · P1 · done — Drag (or up/down) reorder; persist `sortOrder` (column already exists, only “append +10” is implemented).
-- [ ] **E6.T2** · P1 · todo — Render `instructionsMd` as markdown in the detail drawer / cardboard, keep the editor as markdown or a simple split view.
+- [x] **E6.T2** · P1 · done — Render `instructionsMd` as markdown in the detail drawer / cardboard, keep the editor as markdown or a simple split view.
 - [ ] **E6.T3** · P2 · todo — Cardboard: add/delete items without bouncing back to the punch-list tab (toggle and details already work there).
 - [ ] **E6.T4** · P2 · todo — Move an item between areas from the board without opening the drawer.
 
@@ -126,3 +126,5 @@ Planned in `src/lib/maintenanceAlerts.ts` and `docs/maintenance-schedule.md`.
 6. **E6.T1 + E6.T2** — reorder + markdown instructions  
 
 Do not start E7 or E8 until the P0 items above are done, unless a specific vehicle in this garage needs a new GLB.
+
+**Paused:** E4 (cron + email) and E5 (R2 uploads) need Cloudflare resources and secrets that are not in this repo yet. Pick those up after a bucket and a mail provider are wired.
