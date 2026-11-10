@@ -1,5 +1,6 @@
 import { ClerkProvider } from '@clerk/tanstack-react-start'
 
+import { AUTH_HUB_URL, HUB_URL, usesAuthHub } from '@/lib/authHub'
 import { clerkAuthorizedParties } from '@/lib/clerkAuthorizedParties'
 import { getClerkPublishableKey } from '@/lib/clerkPublishableKey'
 
@@ -13,7 +14,13 @@ export default function AppClerkProvider({
     <ClerkProvider
       {...(publishableKey ? { publishableKey } : {})}
       allowedRedirectOrigins={clerkAuthorizedParties()}
-      afterSignOutUrl="/"
+      {...(usesAuthHub
+        ? {
+            signInUrl: `${AUTH_HUB_URL}/sign-in`,
+            signUpUrl: `${AUTH_HUB_URL}/accept-invite`,
+            afterSignOutUrl: HUB_URL,
+          }
+        : { afterSignOutUrl: '/' })}
     >
       {children}
     </ClerkProvider>

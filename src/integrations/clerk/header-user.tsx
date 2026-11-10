@@ -1,5 +1,7 @@
 import { SignInButton, UserButton, useAuth } from '@clerk/tanstack-react-start'
 
+import { signInUrl, usesAuthHub } from '@/lib/authHub'
+
 const clerkAppearance = {
   variables: {
     colorBackground: '#1a1a1a',
@@ -24,6 +26,16 @@ export default function HeaderUser() {
   }
   if (userId) {
     return <UserButton appearance={clerkAppearance} />
+  }
+  if (usesAuthHub) {
+    return (
+      <a
+        href={signInUrl(typeof window === 'undefined' ? 'https://garage.bartonhome.dev/' : window.location.href)}
+        className="btn"
+      >
+        Sign in
+      </a>
+    )
   }
   return (
     <SignInButton mode="modal">

@@ -1,6 +1,8 @@
+// Origins whose session tokens this Worker accepts. The auth hub is included so sign-in redirects back are allowed.
 const PRODUCTION_PARTIES = [
   'https://garage.bartonhome.dev',
   'https://garage.tylerjamesbar.workers.dev',
+  'https://auth.bartonhome.dev',
 ] as const
 
 function extraParties(): string[] {

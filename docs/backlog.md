@@ -110,7 +110,7 @@ Planned in `src/lib/maintenanceAlerts.ts` and `docs/maintenance-schedule.md`.
 **Goal:** Small follow-ups from the cleanup pass. Skip anything that is only file-moving.
 
 - [ ] **E8.T1** · P2 · todo — Split `VehicleForm.tsx` / `VehicleAssetsField.tsx` / `VehicleModelViewer.tsx` only when the next feature has to touch them.
-- [ ] **E8.T2** · P2 · todo — `beforeLoad` auth is optional while sign-in stays a modal with no `/sign-in` route.
+- [x] **E8.T2** · P2 · done — Sign-in moved to the shared Barton Home auth hub (auth.bartonhome.dev); signed-out visitors are redirected there and back.
 - [ ] **E8.T3** · P2 · todo — Typecheck is `pnpm typecheck`; still no unit tests. Add tests around `computeMaintenanceAlerts` when E3 changes the rules.
 - [ ] **E8.T4** · P2 · todo — Confirm production Google OAuth + Clerk DNS after the keys-out-of-git deploy (`DEPLOY.md`). Not code.
 
