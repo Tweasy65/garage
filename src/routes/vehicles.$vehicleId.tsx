@@ -52,6 +52,10 @@ function VehicleLayout() {
     void navigate({ search: (prev) => ({ ...prev, tab: 'service', log: true }) })
   }
 
+  function openMedia() {
+    void navigate({ search: (prev) => ({ ...prev, tab: 'media', edit: true }) })
+  }
+
   return (
     <PageShell>
       <Link
@@ -64,6 +68,7 @@ function VehicleLayout() {
         vehicle={vehicle}
         onEdit={openEdit}
         onLogService={openLogService}
+        onManageMedia={openMedia}
       />
       <div className="garage-panel overflow-hidden">
         <VehicleDetailTabs

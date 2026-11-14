@@ -3,15 +3,17 @@ import { ContactShadows } from '@react-three/drei/core/ContactShadows'
 import { Environment } from '@react-three/drei/core/Environment'
 import { Lightformer } from '@react-three/drei/core/Lightformer'
 import { OrbitControls } from '@react-three/drei/core/OrbitControls'
-import { Canvas, useLoader, useThree } from '@react-three/fiber'
+import { Canvas, useFrame, useLoader, useThree } from '@react-three/fiber'
 import { Loader2, Moon, Sun, ZoomIn, ZoomOut } from 'lucide-react'
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import type { Group, Mesh, MeshStandardMaterial } from 'three'
 import {
   BackSide,
   CanvasTexture,
   Color,
   RepeatWrapping,
+  Spherical,
+  Vector3,
 } from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
@@ -28,6 +30,22 @@ export type VehicleModelPose = {
 
 export type StudioTheme = 'dark' | 'light'
 
+/** Camera presets. Every model faces +x with the driver's side at -z (see the Mustang's door nodes). */
+export type CameraView = 'left' | 'right' | 'front' | 'back'
+
+/** A requested view; `at` changes on every click so picking the same side again re-aims the camera. */
+export type CameraViewRequest = { side: CameraView; at: number }
+
+const ORBIT_TARGET = new Vector3(0, 0.32, 0)
+const VIEW_DISTANCE = 6.4
+const VIEW_HEIGHT = 1.5
+const VIEW_POSITIONS: Record<CameraView, [number, number, number]> = {
+  front: [VIEW_DISTANCE, VIEW_HEIGHT, 0],
+  back: [-VIEW_DISTANCE, VIEW_HEIGHT, 0],
+  left: [0, VIEW_HEIGHT, -VIEW_DISTANCE],
+  right: [0, VIEW_HEIGHT, VIEW_DISTANCE],
+}
+
 type VehicleModelViewerProps = {
   spec: VehicleModelSpec | null
   color?: string | null
@@ -35,6 +53,7 @@ type VehicleModelViewerProps = {
   pose?: VehicleModelPose
   className?: string
   showControls?: boolean
+  view?: CameraViewRequest | null
   onCaptureReady?: (capture: (() => string) | null) => void
 }
 
@@ -321,6 +340,50 @@ function Model({
   )
 }
 
+/**
+ * Swings the camera around the car to the requested side. It moves along the orbit (angle, tilt,
+ * distance) rather than in a straight line, so going front to back circles the car instead of
+ * passing through it. Once it arrives, the person can drag to orbit freely again.
+ */
+function CameraRig({
+  view,
+  controlsRef,
+}: {
+  view: CameraViewRequest | null
+  controlsRef: RefObject<OrbitControlsImpl | null>
+}) {
+  const { camera } = useThree()
+  const goal = useRef<Spherical | null>(null)
+
+  useEffect(() => {
+    goal.current = view
+      ? new Spherical().setFromVector3(new Vector3(...VIEW_POSITIONS[view.side]).sub(ORBIT_TARGET))
+      : null
+  }, [view])
+
+  useFrame((_, delta) => {
+    const target = goal.current
+    if (!target) return
+    const current = new Spherical().setFromVector3(camera.position.clone().sub(ORBIT_TARGET))
+    const step = 1 - Math.exp(-delta * 5)
+    const turn = Math.atan2(Math.sin(target.theta - current.theta), Math.cos(target.theta - current.theta))
+    current.theta += turn * step
+    current.phi += (target.phi - current.phi) * step
+    current.radius += (target.radius - current.radius) * step
+    camera.position.setFromSpherical(current).add(ORBIT_TARGET)
+    controlsRef.current?.update()
+    if (
+      Math.abs(turn) < 0.002 &&
+      Math.abs(target.phi - current.phi) < 0.002 &&
+      Math.abs(target.radius - current.radius) < 0.01
+    ) {
+      goal.current = null
+    }
+  })
+
+  return null
+}
+
 function LoadingSignal({ onChange }: { onChange: (loading: boolean) => void }) {
   useEffect(() => {
     onChange(true)
@@ -381,6 +444,7 @@ export default function VehicleModelViewer({
   pose = {},
   className,
   showControls = true,
+  view = null,
   onCaptureReady,
 }: VehicleModelViewerProps) {
   const controlsRef = useRef<OrbitControlsImpl>(null)
@@ -438,13 +502,14 @@ export default function VehicleModelViewer({
           ref={controlsRef}
           enablePan={false}
           enableZoom={false}
-          autoRotate={autoRotate}
+          autoRotate={autoRotate && !view}
           autoRotateSpeed={1.15}
           minDistance={MIN_DISTANCE}
           maxDistance={MAX_DISTANCE}
           maxPolarAngle={Math.PI / 2.08}
           target={[0, 0.32, 0]}
         />
+        <CameraRig view={view} controlsRef={controlsRef} />
         <CaptureRegistrar active={captureActive} onCaptureReady={onCaptureReady} />
       </Canvas>
       {(loading || !spec) && <LoadingOverlay progress={spec ? progress : null} />}
